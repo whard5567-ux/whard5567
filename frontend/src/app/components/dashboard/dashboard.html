@@ -1,0 +1,83 @@
+<div class="dashboard" *ngIf="stats">
+  <header class="dashboard-header">
+    <div class="header-info">
+      <h2>Monitoring Common Enemy Next Level 2026</h2>
+      <p class="text-secondary">Terakhir diperbarui: {{ stats.total }} peralatan terdaftar</p>
+    </div>
+    <div class="header-actions">
+      <input type="file" #fileInput (change)="onFileSelected($event)" accept=".xlsx, .xls" style="display: none">
+      <button class="btn-upload" (click)="fileInput.click()" [disabled]="isUploading">
+        <span class="btn-icon">📁</span> {{ isUploading ? 'Mengunggah...' : 'Upload Data Master' }}
+      </button>
+      <div class="upload-status" *ngIf="uploadMessage" [ngClass]="{'error': uploadMessage.includes('Error')}">
+        {{ uploadMessage }}
+      </div>
+    </div>
+  </header>
+
+  <section class="stats-grid grid grid-cols-3">
+    <div class="card stat-card">
+      <div class="stat-icon baik">✔️</div>
+      <div class="stat-info">
+        <h3>Peralatan Baik</h3>
+        <p class="stat-value">{{ stats.baik }}</p>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon waspada">⚠️</div>
+      <div class="stat-info">
+        <h3>Peralatan Waspada</h3>
+        <p class="stat-value">{{ stats.waspada }}</p>
+      </div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon kritis">🚨</div>
+      <div class="stat-info">
+        <h3>Peralatan Kritis</h3>
+        <p class="stat-value">{{ stats.kritis }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="main-stats grid">
+    <div class="card health-index-card">
+      <h2>Rata-rata Health Index</h2>
+      <div class="gauge-container">
+        <div class="gauge">
+          <div class="gauge-body">
+            <div class="gauge-fill" [style.transform]="'rotate(' + (stats.average_health_index * 1.8) + 'deg)'" [style.background]="getHealthColor(stats.average_health_index)"></div>
+            <div class="gauge-cover">
+              <span class="gauge-value">{{ stats.average_health_index }}</span>
+              <span class="gauge-label">Score</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card pareto-shortcut">
+      <h2>Trend Gangguan</h2>
+      <p>Lihat visualisasi trend untuk penyebab gangguan transformator terbanyak.</p>
+      <a routerLink="/pareto" class="btn-link large">Trend Gangguan Trafo 📈</a>
+    </div>
+
+    <div class="card recent-list">
+      <div class="card-header">
+        <h2>Peralatan Terbaru</h2>
+        <a routerLink="/equipment" class="btn-link">Lihat Semua</a>
+      </div>
+      <ul class="item-list">
+        <li *ngFor="let item of recentEquipment" class="list-item">
+          <div class="item-info">
+            <span class="item-name">{{ item.name }}</span>
+            <span class="item-type">{{ item.type }}</span>
+          </div>
+          <div class="item-status">
+            <span class="badge" [ngClass]="'badge-' + item.status.toLowerCase()">{{ item.status }}</span>
+            <span class="health-score" [style.color]="getHealthColor(item.health_index)">{{ item.health_index }}%</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+</div>

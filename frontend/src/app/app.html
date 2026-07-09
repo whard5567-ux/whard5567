@@ -1,0 +1,39 @@
+<div class="app-container">
+  <nav class="sidebar">
+    <div class="logo">
+      <span class="logo-icon shiny-bolt">⚡</span>
+      <span class="logo-text">HarGi HT-2</span>
+    </div>
+    <ul class="nav-links">
+      <li>
+        <a routerLink="/pareto" routerLinkActive="active">
+          <span class="nav-icon">📈</span> Trend Gangguan Trafo
+        </a>
+      </li>
+      <li>
+        <a routerLink="/ce-abo" routerLinkActive="active">
+          <span class="nav-icon">📋</span> Common Enemy Next Level 2026
+        </a>
+      </li>
+      <li>
+        <a routerLink="/dashboard" routerLinkActive="active">
+          <span class="nav-icon">📊</span> Monitoring Common Enemy Next Level 2026
+        </a>
+      </li>
+      <li>
+        <a routerLink="/equipment" routerLinkActive="active">
+          <span class="nav-icon">⚙️</span> Equipment
+        </a>
+      </li>
+    </ul>
+  </nav>
+  
+  <main class="content">
+    <header class="top-bar">
+      <h1>{{ title() }}</h1>
+    </header>
+    <div class="page-container">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

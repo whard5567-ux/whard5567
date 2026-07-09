@@ -1,0 +1,200 @@
+<div id="dashboardContainer" class="dashboard pareto-dashboard" [class.presentation-active]="isPresentationMode">
+
+  <header class="dashboard-header" [class.presentation-header]="isPresentationMode">
+    <div class="header-info" *ngIf="!isPresentationMode">
+      <div class="header-top">
+        <h2>TREND GANGGUAN TRAFO</h2>
+        <div class="header-right">
+          <div class="clock-container">{{ currentTime }}</div>
+          <div class="header-subtitle">
+            <p class="text-secondary">Data bersumber dari Google Sheets <span *ngIf="lastUpdated">(Update: {{lastUpdated}})</span></p>
+            <a href="https://docs.google.com/spreadsheets/d/1hf_lpXI6x3hBDfEHX8r8q15w6F3wtlzIABGibdpCMhg/edit#gid=1882488493" 
+               target="_blank" 
+               class="spreadsheet-link">
+               📂 Buka Sumber Data
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="filters">
+      <!-- Bulan Multi-select -->
+      <div class="filter-group">
+        <label>Bulan:</label>
+        <div class="custom-dropdown" (click)="toggleDropdown('bulan', $event)">
+          <div class="dropdown-selected">{{ getSelectedLabel('bulan') }}</div>
+          <div class="dropdown-menu" *ngIf="activeDropdown === 'bulan'" (click)="$event.stopPropagation()">
+            <div class="dropdown-item all-option" (click)="toggleAll('bulan')">
+              <input type="checkbox" [checked]="isAllSelected('bulan')">
+              <span>Semua</span>
+            </div>
+            <div class="dropdown-item" *ngFor="let b of filters.bulan" (click)="toggleFilter('bulan', b)">
+              <input type="checkbox" [checked]="isSelected('bulan', b)">
+              <span>{{ b }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tahun Multi-select -->
+      <div class="filter-group">
+        <label>Tahun:</label>
+        <div class="custom-dropdown" (click)="toggleDropdown('tahun', $event)">
+          <div class="dropdown-selected">{{ getSelectedLabel('tahun') }}</div>
+          <div class="dropdown-menu" *ngIf="activeDropdown === 'tahun'" (click)="$event.stopPropagation()">
+            <div class="dropdown-item all-option" (click)="toggleAll('tahun')">
+              <input type="checkbox" [checked]="isAllSelected('tahun')">
+              <span>Semua</span>
+            </div>
+            <div class="dropdown-item" *ngFor="let t of filters.tahun" (click)="toggleFilter('tahun', t)">
+              <input type="checkbox" [checked]="isSelected('tahun', t)">
+              <span>{{ t }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unit Multi-select -->
+      <div class="filter-group">
+        <label>Unit:</label>
+        <div class="custom-dropdown" (click)="toggleDropdown('unit', $event)">
+          <div class="dropdown-selected">{{ getSelectedLabel('unit') }}</div>
+          <div class="dropdown-menu" *ngIf="activeDropdown === 'unit'" (click)="$event.stopPropagation()">
+            <div class="dropdown-item all-option" (click)="toggleAll('unit')">
+              <input type="checkbox" [checked]="isAllSelected('unit')">
+              <span>Semua</span>
+            </div>
+            <div class="dropdown-item" *ngFor="let u of filters.unit" (click)="toggleFilter('unit', u)">
+              <input type="checkbox" [checked]="isSelected('unit', u)">
+              <span>{{ u }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kategori Multi-select -->
+      <div class="filter-group">
+        <label>Kategori:</label>
+        <div class="custom-dropdown" (click)="toggleDropdown('kategory', $event)">
+          <div class="dropdown-selected">{{ getSelectedLabel('kategory') }}</div>
+          <div class="dropdown-menu" *ngIf="activeDropdown === 'kategory'" (click)="$event.stopPropagation()">
+            <div class="dropdown-item all-option" (click)="toggleAll('kategory')">
+              <input type="checkbox" [checked]="isAllSelected('kategory')">
+              <span>Semua</span>
+            </div>
+            <div class="dropdown-item" *ngFor="let k of filters.kategory" (click)="toggleFilter('kategory', k)">
+              <input type="checkbox" [checked]="isSelected('kategory', k)">
+              <span>{{ k }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="actions-group">
+        <button class="btn-refresh" (click)="loadParetoData()" [disabled]="isLoading">
+          {{ isLoading ? 'Loading...' : '🔄 Refresh' }}
+        </button>
+
+        <button type="button" class="btn-presentation" (click)="togglePresentationMode()" style="background: #6366f1 !important;">
+          📺 Mode Presentasi
+        </button>
+
+        <div class="total-stats" *ngIf="!isLoading && !errorMessage">
+          <span class="total-label">Total:</span>
+          <span class="total-value">{{ totalCount }}</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="error-container card" *ngIf="errorMessage">
+    <div class="error-message">
+      <span class="error-icon">⚠️</span>
+      <p>{{ errorMessage }}</p>
+    </div>
+  </section>
+
+  <section class="charts-grid" [class.presentation-slide-active]="isPresentationMode && (currentSlide === 1 || currentSlide === 2)" [hidden]="!isPresentationMode && (paretoData.length === 0 && unitData.length === 0) || errorMessage">
+    <div class="card chart-card" [class.slide-active]="isPresentationMode && currentSlide === 1" [hidden]="isPresentationMode && currentSlide !== 1">
+      <h3>Grafik Kategori Penyebab Gangguan</h3>
+      <div class="chart-wrapper">
+        <canvas id="paretoChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card chart-card" [class.slide-active]="isPresentationMode && currentSlide === 2" [hidden]="isPresentationMode && currentSlide !== 2">
+      <h3>Grafik Gangguan Per Unit</h3>
+      <div class="chart-wrapper">
+        <canvas id="unitChart"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <section class="trend-container card" [class.presentation-slide-active]="isPresentationMode && currentSlide === 3" [class.slide-active]="isPresentationMode && currentSlide === 3" [hidden]="(!isPresentationMode && (trendData.length === 0 || errorMessage)) || (isPresentationMode && currentSlide !== 3)">
+    <div class="trend-grid">
+      <div class="trend-item">
+        <h3>Trend Gangguan Bulanan</h3>
+        <div class="chart-wrapper trend-wrapper">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+      <div class="trend-item">
+        <h3>Trend Gangguan YoY</h3>
+        <div class="chart-wrapper trend-wrapper">
+          <canvas id="yoyChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Seksi Rincian Data Gangguan (Berdiri Sendiri) -->
+  <section class="detail-data-section card" *ngIf="!isPresentationMode && !errorMessage && (paretoData.length > 0 || unitData.length > 0)">
+    <div class="detail-header">
+      <h3 class="detail-title">Rincian Data Gangguan</h3>
+      <span class="detail-badge" *ngIf="detailData.length > 0">{{ detailData.length }} Data</span>
+    </div>
+
+    <div class="table-container" *ngIf="detailData.length > 0; else noDetailData">
+      <table>
+        <thead>
+          <tr>
+            <th>Unit</th>
+            <th>Tahun</th>
+            <th>Bulan</th>
+            <th>Kategori</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of detailData">
+            <td>{{ item.unit }}</td>
+            <td>{{ item.tahun }}</td>
+            <td>{{ item.bulan }}</td>
+            <td>{{ item.kategory }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #noDetailData>
+      <div class="no-data-msg">
+        <p>Tidak ada rincian data yang tersedia untuk filter ini.</p>
+      </div>
+    </ng-template>
+  </section>
+  
+  <section class="empty-state card" *ngIf="paretoData.length === 0 && unitData.length === 0 && !isLoading && !errorMessage && !isPresentationMode">
+    <p>Tidak ada data untuk filter yang dipilih.</p>
+  </section>
+
+  <!-- Presentation Controls -->
+  <div class="presentation-controls" *ngIf="isPresentationMode">
+    <div class="slide-info">Slide {{ currentSlide }} / {{ totalSlides }}</div>
+    <div class="control-buttons">
+      <button (click)="prevSlide()" title="Slide Sebelumnya">⬅️ Prev</button>
+      <button (click)="togglePresentationMode()" class="btn-exit" title="Keluar Fullscreen">❌ Keluar</button>
+      <button (click)="nextSlide()" title="Slide Berikutnya">Next ➡️</button>
+    </div>
+  </div>
+</div>

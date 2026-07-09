@@ -1,0 +1,47 @@
+<div class="detail-container" *ngIf="item">
+  <div class="back-nav">
+    <a routerLink="/equipment" class="btn-back">← Kembali ke Daftar</a>
+  </div>
+
+  <div class="grid detail-grid">
+    <div class="card profile-card">
+      <div class="profile-header">
+        <div class="profile-icon">⚙️</div>
+        <div>
+          <h2>{{ item.name }}</h2>
+          <p class="text-secondary">ID: #{{ item.id }} | Tipe: {{ item.type }}</p>
+        </div>
+      </div>
+      
+      <div class="info-group">
+        <div class="info-item">
+          <label>Status Saat Ini</label>
+          <span class="badge" [ngClass]="'badge-' + item.status.toLowerCase()">{{ item.status }}</span>
+        </div>
+        <div class="info-item">
+          <label>Health Index</label>
+          <div class="index-display" [style.color]="getHealthColor(item.health_index)">
+            {{ item.health_index }}%
+          </div>
+        </div>
+        <div class="info-item">
+          <label>Pemeliharaan Terakhir</label>
+          <p>{{ item.last_maintenance }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card history-card">
+      <h3>Riwayat Health Index</h3>
+      <div class="history-list">
+        <div class="history-item" *ngFor="let entry of item.history">
+          <span class="history-date">{{ entry.date }}</span>
+          <div class="history-bar-container">
+            <div class="history-bar" [style.width]="entry.index + '%'" [style.background]="getHealthColor(entry.index)"></div>
+          </div>
+          <span class="history-value">{{ entry.index }}%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

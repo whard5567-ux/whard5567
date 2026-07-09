@@ -1,0 +1,249 @@
+<div class="dashboard ce-abo-dashboard">
+  <header class="dashboard-header">
+    <div class="header-info">
+      <div class="header-top">
+        <h2>MONITORING CE ABO 2026</h2>
+        <div class="header-right">
+          <div class="clock-container">{{ currentTime }}</div>
+          <div class="header-subtitle">
+            <p class="text-secondary">Sumber: Google Sheets <span *ngIf="lastUpdated">(Update: {{lastUpdated}})</span></p>
+            <a href="https://docs.google.com/spreadsheets/d/1-eC0GdeMwYDhnGzCSM8viO0HvD6X0NdlMaWOxe2P9ZM/edit#gid=299154811" 
+               target="_blank" class="spreadsheet-link">📂 Spreadsheet</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="filters">
+      <div class="filter-group">
+        <label>UPT:</label>
+        <div class="custom-dropdown" (click)="toggleDropdown('upt', $event)">
+          <div class="dropdown-selected">{{ getSelectedLabel('upt') }}</div>
+          <div class="dropdown-menu" *ngIf="activeDropdown === 'upt'" (click)="$event.stopPropagation()">
+            <div class="dropdown-item all-option" (click)="toggleAll('upt')">
+              <input type="checkbox" [checked]="isAllSelected('upt')"> <span>Semua</span>
+            </div>
+            <div class="dropdown-item" *ngFor="let u of filters.upt" (click)="toggleFilter('upt', u)">
+              <input type="checkbox" [checked]="isSelected('upt', u)"> <span>{{ u }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Sub Bidang:</label>
+        <div class="custom-dropdown" (click)="toggleDropdown('sub_bidang', $event)">
+          <div class="dropdown-selected">{{ getSelectedLabel('sub_bidang') }}</div>
+          <div class="dropdown-menu" *ngIf="activeDropdown === 'sub_bidang'" (click)="$event.stopPropagation()">
+            <div class="dropdown-item all-option" (click)="toggleAll('sub_bidang')">
+              <input type="checkbox" [checked]="isAllSelected('sub_bidang')"> <span>Semua</span>
+            </div>
+            <div class="dropdown-item" *ngFor="let sb of filters.sub_bidang" (click)="toggleFilter('sub_bidang', sb)">
+              <input type="checkbox" [checked]="isSelected('sub_bidang', sb)"> <span>{{ sb }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Level Anomali:</label>
+        <div class="custom-dropdown" (click)="toggleDropdown('level_anomali', $event)">
+          <div class="dropdown-selected">{{ getSelectedLabel('level_anomali') }}</div>
+          <div class="dropdown-menu" *ngIf="activeDropdown === 'level_anomali'" (click)="$event.stopPropagation()">
+            <div class="dropdown-item all-option" (click)="toggleAll('level_anomali')">
+              <input type="checkbox" [checked]="isAllSelected('level_anomali')"> <span>Semua</span>
+            </div>
+            <div class="dropdown-item" *ngFor="let la of filters.level_anomali" (click)="toggleFilter('level_anomali', la)">
+              <input type="checkbox" [checked]="isSelected('level_anomali', la)"> <span>{{ la }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Kondisi Akhir:</label>
+        <div class="custom-dropdown" (click)="toggleDropdown('status', $event)">
+          <div class="dropdown-selected">{{ getSelectedLabel('status') }}</div>
+          <div class="dropdown-menu" *ngIf="activeDropdown === 'status'" (click)="$event.stopPropagation()">
+            <div class="dropdown-item all-option" (click)="toggleAll('status')">
+              <input type="checkbox" [checked]="isAllSelected('status')"> <span>Semua</span>
+            </div>
+            <div class="dropdown-item" *ngFor="let s of filters.status" (click)="toggleFilter('status', s)">
+              <input type="checkbox" [checked]="isSelected('status', s)"> <span>{{ s }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions-group">
+        <button class="btn-refresh" (click)="loadData()" [disabled]="isLoading">
+          {{ isLoading ? 'Loading...' : '🔄 Refresh' }}
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <section class="top-row-container">
+    <!-- Kolom Kiri: 4 Kartu Statistik (2x2) -->
+    <div class="stats-grid">
+      <div class="card stat-card">
+        <div class="stat-label">Total Temuan</div>
+        <div class="stat-value">{{ stats.total }}</div>
+      </div>
+      <div class="card stat-card status-open">
+        <div class="stat-label">OPEN</div>
+        <div class="stat-value">{{ stats.open }}</div>
+      </div>
+      <div class="card stat-card status-close">
+        <div class="stat-label">CLOSE</div>
+        <div class="stat-value">{{ stats.closed }}</div>
+      </div>
+      <div class="card stat-card status-progress">
+        <div class="stat-label">Progres Penyelesaian</div>
+        <div class="stat-value">{{ stats.progress }}%</div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" [style.width]="stats.progress + '%'"></div></div>
+      </div>
+    </div>
+
+    <!-- Kolom Kanan: Pie Chart Status -->
+    <div class="card pie-summary-card">
+      <h3>Persentase Kondisi Akhir</h3>
+      <div class="chart-wrapper">
+        <canvas id="statusPieChart"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <section class="charts-section grid grid-cols-3">
+    <div class="card chart-card">
+      <h3>Kondisi Terkini (Current)</h3>
+      <div class="chart-wrapper"><canvas id="kondisiChart"></canvas></div>
+    </div>
+    <div class="card chart-card">
+      <h3>Distribusi Level Anomali (Target)</h3>
+      <div class="level-anomali-container">
+        <div class="chart-mini-wrapper"><canvas id="levelAnomaliChart"></canvas></div>
+        <div class="table-container compact-table mini-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Level Anomali</th>
+                <th class="text-center">VG</th>
+                <th class="text-center">G</th>
+                <th class="text-center">F</th>
+                <th class="text-center">P</th>
+                <th class="text-center">C</th>
+                <th class="text-center">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of levelAnomaliSummary">
+                <td>{{ item.level }}</td>
+                <td class="text-center" style="color: #3b82f6; font-weight: 600;">{{ item.vg }}</td>
+                <td class="text-center" style="color: #10b981; font-weight: 600;">{{ item.g }}</td>
+                <td class="text-center" style="color: #fbbf24; font-weight: 600;">{{ item.f }}</td>
+                <td class="text-center" style="color: #f87171; font-weight: 600;">{{ item.p }}</td>
+                <td class="text-center" style="color: #991b1b; font-weight: 600;">{{ item.c }}</td>
+                <td class="text-center font-bold">{{ item.total }}</td>
+              </tr>
+            </tbody>
+            <tfoot *ngIf="levelAnomaliSummary.length > 0">
+              <tr class="total-row">
+                <td>TOTAL</td>
+                <td class="text-center">{{ stats.closed }}</td> <!-- Placeholder: logic handles actual sum in backend stats for closing -->
+                <td colspan="4" class="text-right" style="font-size: 0.75rem; font-style: italic; color: #8892b0;">Rincian per kategori</td>
+                <td class="text-center">{{ stats.total }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="card chart-card">
+      <h3>Kondisi Akhir per Sub Bidang</h3>
+      <div class="chart-wrapper"><canvas id="subBidangChart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="charts-section grid grid-cols-2">
+    <div class="card chart-card wide-on-mobile">
+      <h3>Ringkasan Kondisi Akhir per UPT</h3>
+      <div class="table-container compact-table">
+        <table>
+          <thead>
+            <tr>
+              <th>UPT</th>
+              <th class="text-center">VG/G</th>
+              <th class="text-center">F/P/C</th>
+              <th class="text-center">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of uptSummary">
+              <td>{{ item.name }}</td>
+              <td class="text-center status-close-text">{{ item.close }}</td>
+              <td class="text-center status-open-text">{{ item.open }}</td>
+              <td class="text-center font-bold">{{ item.total }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="full-chart-section">
+    <div class="card chart-card wide">
+      <h3>Grafik Kondisi Akhir per UPT</h3>
+      <div class="chart-wrapper"><canvas id="uptChart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="full-chart-section">
+    <div class="card chart-card wide high-chart">
+      <h3>Distribusi per Uraian Anomali (Top 15)</h3>
+      <div class="chart-wrapper"><canvas id="uraianChart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="full-chart-section">
+    <div class="card chart-card wide high-chart">
+      <h3>Rincian Uraian Masalah per Level Anomali</h3>
+      <div class="chart-wrapper"><canvas id="uraianLevelChart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="detail-data-section card">
+    <div class="detail-header">
+      <h3 class="detail-title">Rincian Data Common Enemy Next Level 2026</h3>
+      <span class="detail-badge">{{ detailData.length }} Data Teratas</span>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Kode</th>
+            <th>Sub Bidang</th>
+            <th>Level Anomali</th>
+            <th>UPT</th>
+            <th>Gardu Induk</th>
+            <th>Nama Alat</th>
+            <th>Kondisi Terkini</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of detailData">
+            <td><span class="code-tag">{{ item['Kode'] }}</span></td>
+            <td>{{ item['Sub Bidang'] }}</td>
+            <td>{{ item['Level Anomali'] }}</td>
+            <td>{{ item['UPT'] }}</td>
+            <td>{{ item['Gardu Induk'] }}</td>
+            <td>{{ item['Nama Tower / Span / Sirkit / Alat'] }}</td>
+            <td><span class="kondisi-badge" [attr.data-kondisi]="item['Kondisi Terkini']">{{ item['Kondisi Terkini'] }}</span></td>
+            <td><span class="status-badge" [class.status-open]="item['Status Terkini'] === 'OPEN'">{{ item['Status Terkini'] }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

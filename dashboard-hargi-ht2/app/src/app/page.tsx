@@ -1,4 +1,4 @@
-﻿import { sql } from "@/lib/db";
+import { sql } from "@/lib/db";
 import { CE_ABO_SHEET, PARETO_SHEET, sheetEditUrl } from "@/lib/sheets";
 // Test deploy trigger: gemini-cli-diagus-stable
 import { PageHeader } from "@/components/page-header";
@@ -8,6 +8,8 @@ import type {
 } from "./overview-view";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export default async function OverviewPage({
   searchParams,

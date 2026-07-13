@@ -5,6 +5,8 @@ import { ParetoView } from "./pareto-view";
 import type { GgnRow } from "@/lib/aggregate";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export default async function ParetoPage() {
   const rows = await sql`

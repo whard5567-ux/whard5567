@@ -4,6 +4,8 @@ import { PageHeader } from "@/components/page-header";
 import { AssetMapsView, type GiPoint } from "./asset-maps-view";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export default async function AssetMapsPage() {
   const points = await sql`

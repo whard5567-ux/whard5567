@@ -5,6 +5,8 @@ import { Abo2026View } from "./abo-2026-view";
 import type { AboRow } from "@/lib/aggregate";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export default async function Abo2026Page() {
   const [row] = (await sql`

@@ -3,6 +3,8 @@ import { PageHeader } from "@/components/page-header";
 import { AsesmentBushingView, type DBBushingRecord } from "./asesment-bushing-view";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 type AsesmentBushingQueryRow = {
   rows: DBBushingRecord[];

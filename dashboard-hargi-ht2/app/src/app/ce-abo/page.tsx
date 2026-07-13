@@ -5,6 +5,8 @@ import { CeAboView } from "./ce-abo-view";
 import type { CeRow } from "@/lib/aggregate";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export default async function CeAboPage() {
   const rows = await sql`

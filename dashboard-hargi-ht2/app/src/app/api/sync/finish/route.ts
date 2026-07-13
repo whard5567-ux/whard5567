@@ -9,7 +9,7 @@ const ASESMENT_BUSHING = { id: "1_bBncuTGo8s687UOP9XuU1ObhmTxDlPFXZzwVqYBs3M", g
 
 type Meta = { name: string | null; modifiedTime: string | null };
 
-async function fetchSheetMetadata(sql: postgres.Sql): Promise<{ ce: Meta; pareto: Meta; abo: Meta; bushing: Meta }> {
+async function fetchSheetMetadata(sql: any): Promise<{ ce: Meta; pareto: Meta; abo: Meta; bushing: Meta }> {
   try {
     const [row] = await sql`
       select decrypted_secret from vault.decrypted_secrets

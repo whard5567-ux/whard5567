@@ -49,3 +49,5 @@ Panduan lengkap + hal yang sering bikin bingung: [`docs/11-DEV-LOKAL.md`](./docs
 - `next` dipin **EXACT 16.2.4** — jangan upgrade ([kenapa](./docs/13-KEPUTUSAN-TEKNIS.md))
 - Halaman **tidak pernah** fetch Google — semua data dari Supabase
 - Push ke `main` = deploy production otomatis ([alur](./docs/10-GIT-DEPLOY.md))
+
+

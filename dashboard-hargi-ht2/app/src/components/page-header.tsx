@@ -9,12 +9,14 @@ export function PageHeader({
   sourceUrl,
   sheetName,
   sheetModified,
+  syncTargets,
 }: {
   title: string;
   subtitle?: string;
   sourceUrl?: string;
   sheetName?: string | null;
   sheetModified?: string | null;
+  syncTargets?: string[];
 }) {
   return (
     <header className="rise mb-5 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
@@ -27,7 +29,7 @@ export function PageHeader({
       <div className="flex flex-col items-end gap-1.5">
         <div className="flex items-center gap-2">
           <span className="hidden md:block"><Clock /></span>
-          <RefreshButton />
+          <RefreshButton targets={syncTargets} />
           <ThemeToggle />
         </div>
         {sheetName && (

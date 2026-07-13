@@ -9,7 +9,7 @@ const ASESMENT_BUSHING = { id: "1_bBncuTGo8s687UOP9XuU1ObhmTxDlPFXZzwVqYBs3M", g
 
 type Meta = { name: string | null; modifiedTime: string | null };
 
-async function fetchSheetMetadata(sql: any): Promise<{ ce: Meta; pareto: Meta; abo: Meta; bushing: Meta }> {
+async function fetchSheetMetadata(sql: any, targets: string[] = ["ce", "pareto", "abo", "bushing"]): Promise<{ ce: Meta; pareto: Meta; abo: Meta; bushing: Meta }> {
   try {
     const [row] = await sql`
       select decrypted_secret from vault.decrypted_secrets
@@ -67,10 +67,10 @@ async function fetchSheetMetadata(sql: any): Promise<{ ce: Meta; pareto: Meta; a
       return { name: j.name ?? null, modifiedTime: j.modifiedTime ?? null };
     };
     const [ce, pareto, abo, bushing] = await Promise.all([
-      getMod(CE_ABO.id),
-      getMod(PARETO.id),
-      getMod(ABO_2026.id),
-      getMod(ASESMENT_BUSHING.id)
+      targets.includes("ce") ? getMod(CE_ABO.id) : Promise.resolve({ name: null, modifiedTime: null }),
+      targets.includes("pareto") ? getMod(PARETO.id) : Promise.resolve({ name: null, modifiedTime: null }),
+      targets.includes("abo") ? getMod(ABO_2026.id) : Promise.resolve({ name: null, modifiedTime: null }),
+      targets.includes("bushing") ? getMod(ASESMENT_BUSHING.id) : Promise.resolve({ name: null, modifiedTime: null })
     ]);
     return { ce, pareto, abo, bushing };
   } catch (e) {
@@ -86,7 +86,7 @@ async function fetchSheetMetadata(sql: any): Promise<{ ce: Meta; pareto: Meta; a
 
 export async function POST(req: Request) {
   try {
-    const { logId, error } = await req.json();
+    const { logId, error, targets = ["ce", "pareto", "abo", "bushing"] } = await req.json();
 
     if (error) {
       await sql`update hargi_ht2.refresh_log
@@ -102,30 +102,30 @@ export async function POST(req: Request) {
     const [{ count: c4 }] = await sql`select count(*) from hargi_ht2.asesment_bushing`;
     const total = Number(c1) + Number(c2) + Number(c3) + Number(c4);
 
-    const meta = await fetchSheetMetadata(sql);
+    const meta = await fetchSheetMetadata(sql, targets);
 
     try {
       await sql`update hargi_ht2.refresh_log
         set status='success', row_count=${total}, finished_at=now(),
-            sheet_modified_ce=${meta.ce.modifiedTime}, 
-            sheet_modified_pareto=${meta.pareto.modifiedTime},
-            sheet_modified_abo=${meta.abo.modifiedTime},
-            sheet_modified_bushing=${meta.bushing.modifiedTime},
-            sheet_name_ce=${meta.ce.name}, 
-            sheet_name_pareto=${meta.pareto.name},
-            sheet_name_abo=${meta.abo.name},
-            sheet_name_bushing=${meta.bushing.name}
+            sheet_modified_ce=${targets.includes('ce') ? meta.ce.modifiedTime : null}, 
+            sheet_modified_pareto=${targets.includes('pareto') ? meta.pareto.modifiedTime : null},
+            sheet_modified_abo=${targets.includes('abo') ? meta.abo.modifiedTime : null},
+            sheet_modified_bushing=${targets.includes('bushing') ? meta.bushing.modifiedTime : null},
+            sheet_name_ce=${targets.includes('ce') ? meta.ce.name : null}, 
+            sheet_name_pareto=${targets.includes('pareto') ? meta.pareto.name : null},
+            sheet_name_abo=${targets.includes('abo') ? meta.abo.name : null},
+            sheet_name_bushing=${targets.includes('bushing') ? meta.bushing.name : null}
         where id=${logId}`;
     } catch (err) {
       console.warn("Fallback metadata refresh_log:", err);
       await sql`update hargi_ht2.refresh_log
         set status='success', row_count=${total}, finished_at=now(),
-            sheet_modified_ce=${meta.ce.modifiedTime}, 
-            sheet_modified_pareto=${meta.pareto.modifiedTime},
-            sheet_modified_abo=${meta.abo.modifiedTime},
-            sheet_name_ce=${meta.ce.name}, 
-            sheet_name_pareto=${meta.pareto.name},
-            sheet_name_abo=${meta.abo.name}
+            sheet_modified_ce=${targets.includes('ce') ? meta.ce.modifiedTime : null}, 
+            sheet_modified_pareto=${targets.includes('pareto') ? meta.pareto.modifiedTime : null},
+            sheet_modified_abo=${targets.includes('abo') ? meta.abo.modifiedTime : null},
+            sheet_name_ce=${targets.includes('ce') ? meta.ce.name : null}, 
+            sheet_name_pareto=${targets.includes('pareto') ? meta.pareto.name : null},
+            sheet_name_abo=${targets.includes('abo') ? meta.abo.name : null}
         where id=${logId}`;
     }
 

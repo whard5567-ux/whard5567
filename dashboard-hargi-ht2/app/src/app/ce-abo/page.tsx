@@ -22,7 +22,7 @@ export default async function CeAboPage() {
       select sheet_name_ce as sheet_name,
              to_char(sheet_modified_ce::timestamptz at time zone 'Asia/Jakarta', 'DD Mon YYYY') sheet_mod
       from hargi_ht2.refresh_log
-      where status = 'success' and finished_at is not null
+      where status = 'success' and finished_at is not null and sheet_modified_ce is not null
       order by id desc limit 1` as unknown as { sheet_name: string | null; sheet_mod: string | null }[];
 
   const last = lastLog[0] || {};
@@ -33,8 +33,9 @@ export default async function CeAboPage() {
         title="Common Enemy Next Level 2026"
         subtitle="Temuan anomali HARGI · UIT Jawa Bagian Tengah"
         sourceUrl={sheetEditUrl(CE_ABO_SHEET)}
-          sheetName={last?.sheet_name ?? null}
-          sheetModified={last?.sheet_mod ?? null}
+        sheetName={last?.sheet_name ?? null}
+        sheetModified={last?.sheet_mod ?? null}
+        syncTargets={["ce"]}
       />
       <CeAboView rows={rows} />
     </>

@@ -23,7 +23,7 @@ export default async function AsesmentBushingPage() {
       (select to_jsonb(m) from (
          select to_char(finished_at::timestamptz at time zone 'Asia/Jakarta', 'DD Mon YYYY · HH24:MI') as synced_at
          from hargi_ht2.refresh_log
-         where status = 'success' and finished_at is not null
+         where status = 'success' and finished_at is not null and sheet_modified_bushing is not null
          order by id desc limit 1) m) as meta
   `) as unknown as [AsesmentBushingQueryRow];
 
@@ -37,6 +37,7 @@ export default async function AsesmentBushingPage() {
         sourceUrl="https://docs.google.com/spreadsheets/d/1_bBncuTGo8s687UOP9XuU1ObhmTxDlPFXZzwVqYBs3M/edit?gid=0#gid=0"
         sheetName="Asesment Bushing"
         sheetModified={meta?.synced_at?.split(" · ")[0]}
+        syncTargets={["bushing"]}
       />
       <AsesmentBushingView rows={rows} />
     </div>

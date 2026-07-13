@@ -18,7 +18,7 @@ export default async function ParetoPage() {
       select sheet_name_pareto as sheet_name,
              to_char(sheet_modified_pareto::timestamptz at time zone 'Asia/Jakarta', 'DD Mon YYYY') sheet_mod
       from hargi_ht2.refresh_log
-      where status = 'success' and finished_at is not null
+      where status = 'success' and finished_at is not null and sheet_modified_pareto is not null
       order by id desc limit 1` as unknown as { sheet_name: string | null; sheet_mod: string | null }[];
   
   const last = lastLog[0] || {};
@@ -29,8 +29,9 @@ export default async function ParetoPage() {
         title="Trend Gangguan Trafo"
         subtitle="Gangguan transformator · UIT Jawa Bagian Tengah"
         sourceUrl={sheetEditUrl(PARETO_SHEET)}
-          sheetName={last?.sheet_name ?? null}
-          sheetModified={last?.sheet_mod ?? null}
+        sheetName={last?.sheet_name ?? null}
+        sheetModified={last?.sheet_mod ?? null}
+        syncTargets={["pareto"]}
       />
       <ParetoView rows={rows} />
     </>

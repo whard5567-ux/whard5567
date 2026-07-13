@@ -23,10 +23,10 @@ export default async function Abo2026Page() {
          where jenis_anomali ilike '%AHI%' and jenis_anomali ilike '%aset kritikal%'
       ) y) as ahi_critical,
       (select to_jsonb(m) from (
-         select NULL as name,
-                NULL as modified
+         select sheet_name_abo as name,
+                to_char(sheet_modified_abo::timestamptz at time zone 'Asia/Jakarta', 'DD Mon YYYY') as modified
          from hargi_ht2.refresh_log
-         where status = 'success' and finished_at is not null
+         where status = 'success' and finished_at is not null and sheet_modified_abo is not null
          order by id desc limit 1) m) as meta
   `) as unknown as [{ 
     rows: AboRow[]; 
@@ -44,6 +44,7 @@ export default async function Abo2026Page() {
         sourceUrl={sheetEditUrl(ABO_2026_SHEET)}
         sheetName={meta?.name || "ABO 2026"}
         sheetModified={meta?.modified}
+        syncTargets={["abo"]}
       />
       <Abo2026View rows={rows} ahiCritical={ahi_critical} />
     </div>

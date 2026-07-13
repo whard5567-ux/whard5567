@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw, CircleAlert, CircleCheck } from "lucide-react";
 
-export function RefreshButton() {
+export function RefreshButton({ targets = ["ce", "pareto", "abo", "bushing"] }: { targets?: string[] }) {
   const router = useRouter();
   const [state, setState] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [msg, setMsg] = useState("");
@@ -15,7 +15,11 @@ export function RefreshButton() {
     let logId: number | null = null;
     try {
       // 1. Init
-      const initRes = await fetch("/api/sync/init", { method: "POST" });
+      const initRes = await fetch("/api/sync/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targets })
+      });
       const initBody = await initRes.json();
       if (!initRes.ok || !initBody.ok) throw new Error(initBody.error ?? `Init failed`);
       logId = initBody.logId;
@@ -44,17 +48,17 @@ export function RefreshButton() {
         }
       }
 
-      await syncSheet("ce", "CE ABO");
-      await syncSheet("pareto", "Gangguan Trafo");
-      await syncSheet("abo", "ABO 2026");
-      await syncSheet("bushing", "Asesment Bushing");
+      if (targets.includes("ce")) await syncSheet("ce", "CE ABO");
+      if (targets.includes("pareto")) await syncSheet("pareto", "Gangguan Trafo");
+      if (targets.includes("abo")) await syncSheet("abo", "ABO 2026");
+      if (targets.includes("bushing")) await syncSheet("bushing", "Asesment Bushing");
 
       // 4. Finish
       setMsg("Menyelesaikan...");
       const finishRes = await fetch("/api/sync/finish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ logId }),
+        body: JSON.stringify({ logId, targets }),
       });
       if (!finishRes.ok) throw new Error("Finish failed");
 

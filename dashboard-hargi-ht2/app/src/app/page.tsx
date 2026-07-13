@@ -1,4 +1,4 @@
-import { sql } from "@/lib/db";
+﻿import { sql } from "@/lib/db";
 import { CE_ABO_SHEET, PARETO_SHEET, sheetEditUrl } from "@/lib/sheets";
 // Test deploy trigger: gemini-cli-diagus-stable
 import { PageHeader } from "@/components/page-header";
@@ -119,7 +119,7 @@ export default async function OverviewPage({
          and (unit = any(${selUnits}) or ${selUnits.length === 0})) as trafo,
       (select to_jsonb(g) from (
          select gt.gardu, gt.nama_bay, gt.tgl_keluar, gt.unit,
-                -- ULTG gak ada di sheet gangguan — lookup dari tabel CE (nama GI identik)
+                -- ULTG gak ada di sheet gangguan â€” lookup dari tabel CE (nama GI identik)
                 (select ce2.ultg from hargi_ht2.ce_abo_findings ce2
                  where upper(trim(ce2.gardu_induk)) = upper(trim(gt.gardu))
                    and coalesce(trim(ce2.ultg), '') <> ''
@@ -134,7 +134,7 @@ export default async function OverviewPage({
                 to_char(sheet_modified_ce::timestamptz at time zone 'Asia/Jakarta', 'DD Mon YYYY') as mod_ce,
                 to_char(sheet_modified_pareto::timestamptz at time zone 'Asia/Jakarta', 'DD Mon YYYY') as mod_pareto,
                 NULL as mod_abo,
-                to_char(finished_at::timestamptz at time zone 'Asia/Jakarta', 'DD Mon YYYY · HH24:MI') as synced_at
+                to_char(finished_at::timestamptz at time zone 'Asia/Jakarta', 'DD Mon YYYY Â· HH24:MI') as synced_at
          from hargi_ht2.refresh_log
          where status = 'success' and finished_at is not null
          order by id desc limit 1) m) as meta,
@@ -160,7 +160,7 @@ export default async function OverviewPage({
     <div className="space-y-6">
       <PageHeader
         title="Overview"
-        subtitle="Portal Ringkasan Data Hartrans 2 · UIT Jawa Bagian Tengah"
+        subtitle="Portal Ringkasan Data Hartrans 2 Â· UIT Jawa Bagian Tengah"
       />
       <OverviewView
         ce={ce}
@@ -179,8 +179,3 @@ export default async function OverviewPage({
     </div>
   );
 }
-
-/ /  
- T r i g g e r  
- V e r c e l  
- 

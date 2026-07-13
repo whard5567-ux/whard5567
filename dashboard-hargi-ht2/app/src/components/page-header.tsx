@@ -20,9 +20,13 @@ export function PageHeader({
 }) {
   return (
     <header className="rise mb-5 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-      <div>
-        <h1 className="text-xl font-bold tracking-tight md:text-2xl">{title}</h1>
-        {subtitle && <p className="mt-1 text-xs text-ink-3">{subtitle}</p>}
+      <div className="drop-shadow-sm">
+        <h1 className="text-xl font-bold tracking-tight md:text-2xl text-ink drop-shadow-md">{title}</h1>
+        {subtitle && (
+          <p className="mt-1 text-xs font-bold bg-gradient-to-r from-blue-600 to-emerald-700 dark:from-blue-400 dark:to-emerald-500 bg-clip-text text-transparent drop-shadow-sm">
+            {subtitle}
+          </p>
+        )}
       </div>
 
       {/* Kanan atas: [Jam] [Refresh] [Theme] + baris Sumber di bawahnya */}

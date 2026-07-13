@@ -8,7 +8,6 @@ const base = postgres('postgresql://ht2_diagus.mjgekmjnsipthcswazid:fNgzSz81Rdg~
   keep_alive: 30,
   max_lifetime: 60 * 15,
   connect_timeout: 10,
-  family: 4, 
 });
 
 const sql = new Proxy(base, {

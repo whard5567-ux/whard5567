@@ -10,21 +10,21 @@ async function test() {
   try {
     await sql`select NULL at time zone 'Asia/Jakarta'`;
     console.log("NULL test passed");
-  } catch(e) {
+  } catch(e: any) {
     console.error("NULL test failed:", e.message);
   }
 
   try {
     await sql`select sheet_modified_ce at time zone 'Asia/Jakarta' from hargi_ht2.refresh_log limit 1`;
     console.log("table test passed");
-  } catch(e) {
+  } catch(e: any) {
     console.error("table test failed:", e.message);
   }
 
   try {
     await sql`select extract(year from now() at time zone 'Asia/Jakarta')::int::text`;
     console.log("extract test passed");
-  } catch(e) {
+  } catch(e: any) {
     console.error("extract test failed:", e.message);
   }
 }

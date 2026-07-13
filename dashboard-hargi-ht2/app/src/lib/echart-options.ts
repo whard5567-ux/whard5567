@@ -372,7 +372,9 @@ export function groupedBarOption(
       color: t.tick, 
       fontSize: FONT_LABEL, 
       interval: 0 as const,
-      rotate: rotateLabel !== undefined ? rotateLabel : (horizontal ? 0 : (categories.length > 5 ? 35 : 0))
+      rotate: rotateLabel !== undefined ? rotateLabel : (horizontal ? 0 : (categories.length > 5 ? 35 : 0)),
+      width: horizontal ? undefined : 90,
+      overflow: horizontal ? undefined : "break" as const
     },
     axisLine: { lineStyle: { color: t.grid } },
     axisTick: { show: false },

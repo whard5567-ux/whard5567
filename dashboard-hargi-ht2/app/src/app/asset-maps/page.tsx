@@ -6,10 +6,7 @@ import { AssetMapsView, type GiPoint } from "./asset-maps-view";
 export const dynamic = "force-dynamic";
 
 export default async function AssetMapsPage() {
-  // Agregasi per GI di SQL: koordinat + jumlah gangguan + breakdown kategori
-  // + trafo terdampak (nama_bay dinormalisasi: "TRF#4 150/20kV (INC)" → "TRF#4")
-  const [points, [last]] = (await Promise.all([
-    sql`
+  const points = await sql`
       select
         gardu,
         coalesce(max(nullif(trim(unit), '')), 'Tanpa Unit') as unit,
@@ -30,14 +27,16 @@ export default async function AssetMapsPage() {
           and coalesce(trim(gardu), '') <> ''
       ) sub
       group by gardu
-      order by total desc`,
-    sql`
+      order by total desc` as unknown as GiPoint[];
+
+  const lastLog = await sql`
       select sheet_name_pareto as sheet_name,
-             to_char(sheet_modified_pareto at time zone 'Asia/Jakarta', 'DD Mon YYYY') sheet_mod
+             to_char(sheet_modified_pareto::timestamptz at time zone 'Asia/Jakarta', 'DD Mon YYYY') sheet_mod
       from hargi_ht2.refresh_log
       where status = 'success' and finished_at is not null
-      order by id desc limit 1`,
-  ])) as unknown as [GiPoint[], { sheet_name: string | null; sheet_mod: string | null }[]];
+      order by id desc limit 1` as unknown as { sheet_name: string | null; sheet_mod: string | null }[];
+
+  const last = lastLog[0] || {};
 
   return (
     <div className="-mx-4 -mb-12 -mt-4 flex h-dvh min-h-0 flex-col md:-mx-8 md:-mt-6">

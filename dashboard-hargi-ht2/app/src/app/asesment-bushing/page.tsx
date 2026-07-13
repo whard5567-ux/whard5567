@@ -21,7 +21,7 @@ export default async function AsesmentBushingPage() {
          from hargi_ht2.asesment_bushing
       ) x) as rows,
       (select to_jsonb(m) from (
-         select to_char(finished_at at time zone 'Asia/Jakarta', 'DD Mon YYYY · HH24:MI') as synced_at
+         select to_char(finished_at::timestamptz at time zone 'Asia/Jakarta', 'DD Mon YYYY · HH24:MI') as synced_at
          from hargi_ht2.refresh_log
          where status = 'success' and finished_at is not null
          order by id desc limit 1) m) as meta

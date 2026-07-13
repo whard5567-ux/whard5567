@@ -14,6 +14,7 @@ const NAV = [
   { href: "/abo-2026", label: "ABO 2026", icon: Zap },
   { href: "/ahi-mtu", label: "KONDISI AHI MTU", icon: Activity },
   { href: "/asesment-bushing", label: "MONITORING BUSHING", icon: ShieldAlert },
+  { href: "/monitoring-sealing-end", label: "MONITORING SEALING END", icon: ShieldAlert },
 ];
 
 export function Sidebar() {

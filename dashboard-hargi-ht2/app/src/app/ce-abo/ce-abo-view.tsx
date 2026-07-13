@@ -31,6 +31,9 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
   const filtered = useMemo(() => ceFilterRows(findings, sel), [findings, sel]);
   const agg = useMemo(() => ceAggregate(filtered), [filtered]);
 
+  const fullFiltered = useMemo(() => ceFilterRows(rows, sel), [rows, sel]);
+  const fullAgg = useMemo(() => ceAggregate(fullFiltered), [fullFiltered]);
+
   const set = (k: keyof CeFilters) => (v: string[]) => setSel((s) => ({ ...s, [k]: v }));
 
   // Hero: agregat dari baris temuan yang lolos filter SELAIN level
@@ -242,7 +245,7 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
       {showDeck && <Deck slides={slides} onExit={() => setShowDeck(false)} />}
 
       {/* Filter bar */}
-      <div className="rise rise-1 relative z-40 flex flex-wrap items-center gap-2">
+      <div className="card rise rise-1 relative z-40 flex flex-wrap items-center gap-4 p-4 shadow-md bg-surface-2/80 backdrop-blur-xl">
         <MultiSelect label="UPT" options={available.upt} selected={sel.upt} onChange={set("upt")} />
         <MultiSelect label="Sub Bidang" options={available.sub_bidang} selected={sel.sub_bidang} onChange={set("sub_bidang")} />
         <MultiSelect label="Level Anomali" options={available.level_anomali} selected={sel.level_anomali} onChange={set("level_anomali")} />
@@ -250,13 +253,13 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
         
         <button
           onClick={() => setShowDeck(true)}
-          className="ml-2 flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-1.5 text-[13px] font-medium text-ink-2 hover:bg-surface-3 hover:text-ink transition-colors"
+          className="ml-2 flex items-center gap-2 rounded-lg bg-surface-solid px-4 py-2 text-[13px] font-medium text-ink-2 shadow-sm border border-edge hover:bg-surface-3 hover:text-ink hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5"
         >
           <Presentation className="h-4 w-4" /> Slide Deck
         </button>
 
         <div className="ml-auto flex items-center gap-3">
-          <span className="num text-xs text-ink-3">{filtered.length} / {rows.length} temuan</span>
+          <span className="num rounded-full bg-surface-3 px-3 py-1 text-xs font-semibold text-ink-3">{filtered.length} / {rows.length} temuan</span>
         </div>
       </div>
 
@@ -275,17 +278,20 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
         />
       </div>
 
-      {/* Pie */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
-        <ChartCard title="TARGET AWAL" className="rise rise-5 col-span-2 min-h-80 lg:col-span-2">
-          <EChart key={`ka-${t.key}`} option={pieOption(t, condSlices(targetAwalAgg.kondisiAwal))} />
-        </ChartCard>
-
-        <ChartCard title="Kondisi Terkini (Current)" className="rise rise-5 col-span-2 min-h-72 lg:col-span-4">
-          <div className="grid h-full grid-cols-1 items-center gap-3 sm:grid-cols-2">
-            <div className="h-64">
-              <EChart key={`kt-${t.key}`} option={pieOption(t, condSlices(agg.kondisiTerkini))} />
+      {/* Pie & Tabel Kondisi Awal & Terkini */}
+      <div className="grid grid-cols-1 mt-3">
+        <ChartCard title="Target Awal & Kondisi Terkini" className="rise rise-5 min-h-72">
+          <div className="grid h-full grid-cols-1 items-center gap-6 lg:grid-cols-3">
+            <div className="flex flex-col h-64">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-3 text-center mb-1">Target Awal</div>
+              <EChart key={`ka-${t.key}`} option={pieOption(t, condSlices(targetAwalAgg.kondisiAwal))} />
             </div>
+            
+            <div className="flex flex-col h-64">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-3 text-center mb-1">Kondisi Terkini</div>
+              <EChart key={`kt-${t.key}`} option={pieOption(t, condSlices(targetAwalAgg.kondisiTerkini))} />
+            </div>
+
             {/* tabel mini level anomali */}
             <div className="overflow-x-auto scrollbar-thin">
               <table className="w-full text-xs">
@@ -301,7 +307,7 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {agg.levelSummaryTerkini.map((l) => (
+                  {targetAwalAgg.levelSummaryTerkini.map((l) => (
                     <tr key={l.level} className="border-b border-edge/50">
                       <td className="py-1.5 pr-2 font-medium">{l.level}</td>
                       <td className="num px-1.5 text-center text-blue-500">{l.vg}</td>
@@ -319,7 +325,7 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
                     <td colSpan={5} className="px-1.5 text-right text-[10px] font-normal italic text-ink-3">
                       rincian per kategori
                     </td>
-                    <td className="num px-1.5 text-center">{agg.stats.total}</td>
+                    <td className="num px-1.5 text-center">{targetAwalAgg.stats.total}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -338,95 +344,115 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
         </ChartCard>
       </div>
 
-      {/* UPT: tabel + grafik */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
-        <ChartCard title="Ringkasan per UPT" className="rise rise-3 lg:col-span-2">
-          <div className="overflow-x-auto scrollbar-thin">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-edge text-left text-[10px] uppercase tracking-wider text-ink-3">
-                  <th className="py-2 pr-2">UPT</th>
-                  <th className="px-2 text-center text-blue-500">Very Good</th>
-                  <th className="px-2 text-center text-emerald-500">Good</th>
-                  <th className="px-2 text-center text-amber-500">Fair</th>
-                  <th className="px-2 text-center text-red-400">Poor</th>
-                  <th className="px-2 text-center text-red-700">Critical</th>
-                  <th className="px-2 text-center">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {agg.uptSummary.map((u) => (
-                  <tr key={u.name} className="border-b border-edge/50 transition-colors hover:bg-surface-2">
-                    <td className="py-2 pr-2 font-medium">{u.name}</td>
-                    <td className="num px-2 text-center text-blue-500">{u.vg}</td>
-                    <td className="num px-2 text-center text-emerald-500">{u.g}</td>
-                    <td className="num px-2 text-center text-amber-500">{u.f}</td>
-                    <td className="num px-2 text-center text-red-400">{u.p}</td>
-                    <td className="num px-2 text-center text-red-700">{u.c}</td>
-                    <td className="num px-2 text-center font-bold">{u.total}</td>
+      {/* UPT: tabel + grafik disatukan */}
+      <div className="grid grid-cols-1 mt-3">
+        <ChartCard title="Ringkasan & Distribusi per UPT" className="rise rise-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div className="overflow-x-auto scrollbar-thin">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-edge text-left text-[10px] uppercase tracking-wider text-ink-3">
+                    <th className="py-2 pr-2">UPT</th>
+                    <th className="px-2 text-center text-blue-500">Very Good</th>
+                    <th className="px-2 text-center text-emerald-500">Good</th>
+                    <th className="px-2 text-center text-amber-500">Fair</th>
+                    <th className="px-2 text-center text-red-400">Poor</th>
+                    <th className="px-2 text-center text-red-700">Critical</th>
+                    <th className="px-2 text-center">Total</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {agg.uptSummary.map((u) => (
+                    <tr key={u.name} className="border-b border-edge/50 transition-colors hover:bg-surface-2">
+                      <td className="py-2 pr-2 font-medium">{u.name}</td>
+                      <td className="num px-2 text-center text-blue-500">{u.vg}</td>
+                      <td className="num px-2 text-center text-emerald-500">{u.g}</td>
+                      <td className="num px-2 text-center text-amber-500">{u.f}</td>
+                      <td className="num px-2 text-center text-red-400">{u.p}</td>
+                      <td className="num px-2 text-center text-red-700">{u.c}</td>
+                      <td className="num px-2 text-center font-bold">{u.total}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              {agg.uptSummary.map((u) => {
+                const slices = [
+                  { name: "Critical", value: u.c, color: conditionColor("Critical") },
+                  { name: "Poor", value: u.p, color: conditionColor("Poor") },
+                  { name: "Fair", value: u.f, color: conditionColor("Fair") },
+                  { name: "Good", value: u.g, color: conditionColor("Good") },
+                  { name: "Very Good", value: u.vg, color: conditionColor("Very Good") },
+                ].filter(s => s.value > 0);
+
+                return (
+                  <div key={u.name} className="flex flex-col h-56 bg-surface-1/30 rounded-xl p-3 border border-edge/30">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-ink-3 text-center mb-1">
+                      {u.name.replace(/^UPT /, "")}
+                    </div>
+                    <div className="flex-1 min-h-0 relative">
+                      <EChart 
+                        key={`upt-pie-${u.name}-${t.key}`} 
+                        option={pieOption(t, slices)} 
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </ChartCard>
-        <ChartCard title="Grafik Kondisi Akhir per UPT" className="rise rise-4 h-[36rem] lg:col-span-3">
-          <EChart key={`upt-${t.key}`} option={toGroupedH(agg.byUpt)} />
-        </ChartCard>
       </div>
 
-      {/* Uraian anomali — sampingan biar hemat space */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-      <ChartCard title="Distribusi per Uraian Anomali" badge={`${uraianTop.length} jenis`} className="rise rise-5 h-96">
-        <EChart
-          key={`ur-${t.key}`}
-          option={hbarOption(t, uraianTop.map(([u]) => u), uraianTop.map(([, c]) => c), "#6366f1")}
-        />
-      </ChartCard>
 
-      <ChartCard title="Rincian Uraian Masalah per Level Anomali" className="rise rise-6 h-96">
-        <EChart
-          key={`url-${t.key}`}
-          option={groupedBarOption(
-            t,
-            uraianLevelLabels,
-            uraianAll.map((u, i) => ({
-              name: u,
-              data: uraianLevelLabels.map((l) => agg.byLevelUraian.get(l)?.get(u) ?? 0),
-              color: PALETTE[i % PALETTE.length],
-            })),
-          )}
-        />
-      </ChartCard>
-      </div>
 
-      <div className="grid grid-cols-1 gap-3 mt-3">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3 mt-3">
         <ChartCard 
           title="Level Anomali Trafo" 
-          badge={`${agg.trafoUraian.size} jenis`} 
-          className="rise rise-7"
-          style={{ height: Math.max(384, agg.trafoUraian.size * 32 + 100) }}
+          badge={`${fullAgg.trafoUraian.size} jenis`} 
+          className="rise rise-7 h-96"
         >
           <EChart
             key={`trafo-${t.key}`}
-            option={toGroupedH(agg.trafoUraian)}
+            option={toGrouped(fullAgg.trafoUraian)}
+          />
+        </ChartCard>
+        <ChartCard 
+          title="Level Anomali MV Apparatus" 
+          badge={`${fullAgg.mvApparatusUraian.size} jenis`} 
+          className="rise rise-7 h-96"
+        >
+          <EChart
+            key={`mv-${t.key}`}
+            option={toGrouped(fullAgg.mvApparatusUraian)}
+          />
+        </ChartCard>
+        <ChartCard 
+          title="Level Anomali Switch Yard" 
+          badge={`${fullAgg.switchYardUraian.size} jenis`} 
+          className="rise rise-7 h-96"
+        >
+          <EChart
+            key={`sy-${t.key}`}
+            option={toGrouped(fullAgg.switchYardUraian)}
           />
         </ChartCard>
       </div>
 
       {/* Tabel rincian */}
-      <section className="card rise rise-6 p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="card-title">Rincian Data Common Enemy Next Level 2026</h3>
-          <span className="num rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-semibold text-ink-2">
+      <section className="card rise rise-6 p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="card-title text-base font-bold text-ink tracking-wide">Rincian Data Common Enemy Next Level 2026</h3>
+          <span className="num rounded-full bg-surface-3 px-3 py-1 text-[11px] font-bold text-ink-2">
             {Math.min(filtered.length, 100)} dari {filtered.length}
           </span>
         </div>
-        <div className="max-h-120 overflow-auto scrollbar-thin">
+        <div className="max-h-120 overflow-auto scrollbar-thin rounded-lg border border-edge shadow-inner">
           <table className="w-full text-xs">
-            <thead className="sticky top-0 bg-surface-solid">
-              <tr className="border-b border-edge text-left text-[10px] uppercase tracking-wider text-ink-3">
-                <th className="py-2 pr-3">Kode</th>
+            <thead className="sticky top-0 bg-surface-solid/95 backdrop-blur-md z-10">
+              <tr className="border-b border-edge text-left text-[11px] font-semibold uppercase tracking-wider text-ink-3">
+                <th className="py-3 px-4">Kode</th>
                 <th className="px-3">Level Anomali</th>
                 <th className="px-3">UPT</th>
                 <th className="px-3">Gardu Induk</th>
@@ -438,16 +464,16 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
             </thead>
             <tbody>
               {filtered.slice(0, 100).map((r, i) => (
-                <tr key={`${r.kode}-${i}`} className="border-b border-edge/50 transition-colors hover:bg-surface-2">
-                  <td className="num py-2 pr-3 font-medium text-accent">{r.kode}</td>
-                  <td className="px-3">{r.level_anomali}</td>
-                  <td className="px-3 whitespace-nowrap">{r.upt}</td>
-                  <td className="px-3">{r.gardu_induk}</td>
-                  <td className="px-3">{r.nama_alat}</td>
-                  <td className="px-3">{r.uraian}</td>
+                <tr key={`${r.kode}-${i}`} className="border-b border-edge/50 transition-all duration-200 hover:bg-surface-3 hover:shadow-[inset_4px_0_0_var(--accent)]">
+                  <td className="num py-3 px-4 font-semibold text-accent">{r.kode}</td>
+                  <td className="px-3 text-ink-2">{r.level_anomali}</td>
+                  <td className="px-3 whitespace-nowrap text-ink-2">{r.upt}</td>
+                  <td className="px-3 text-ink-2">{r.gardu_induk}</td>
+                  <td className="px-3 text-ink-2">{r.nama_alat}</td>
+                  <td className="px-3 text-ink-2">{r.uraian}</td>
                   <td className="px-3 whitespace-nowrap">
                     <span
-                      className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                      className="rounded-full px-2.5 py-1 text-[10px] font-bold text-white shadow-sm"
                       style={{ backgroundColor: conditionColor(r.kondisi_terkini) }}
                     >
                       {r.kondisi_terkini || "—"}
@@ -455,10 +481,10 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
                   </td>
                   <td className="px-3">
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      className={`rounded-full px-2.5 py-1 text-[10px] font-bold shadow-sm border ${
                         r.status_terkini === "OPEN"
-                          ? "bg-red-500/15 text-red-500"
-                          : "bg-emerald-500/15 text-emerald-500"
+                          ? "bg-red-500/15 text-red-600 border-red-500/30"
+                          : "bg-emerald-500/15 text-emerald-600 border-emerald-500/30"
                       }`}
                     >
                       {r.status_terkini}

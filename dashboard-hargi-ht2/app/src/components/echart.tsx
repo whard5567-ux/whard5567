@@ -1,9 +1,14 @@
 "use client";
 
-import ReactECharts from "echarts-for-react";
+import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import type { EChartsOption } from "echarts";
+
+const ReactECharts = dynamic(() => import("echarts-for-react"), {
+  ssr: false,
+  loading: () => <div className="h-full w-full flex items-center justify-center text-xs text-ink-3">Memuat Grafik...</div>,
+});
 
 // Token chart ikut theme — satu sumber untuk semua option builder
 export type ChartTheme = {

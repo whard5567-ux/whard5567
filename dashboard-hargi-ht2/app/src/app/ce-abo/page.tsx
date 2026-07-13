@@ -7,8 +7,7 @@ import type { CeRow } from "@/lib/aggregate";
 export const dynamic = "force-dynamic";
 
 export default async function CeAboPage() {
-  const [rows, [last]] = (await Promise.all([
-    sql`
+  const rows = await sql`
       select coalesce(kode,'') kode, coalesce(sub_bidang,'') sub_bidang,
              coalesce(level_anomali,'') level_anomali, coalesce(uraian,'') uraian,
              coalesce(upt,'') upt, coalesce(ultg,'') ultg, coalesce(gardu_induk,'') gardu_induk,
@@ -16,14 +15,17 @@ export default async function CeAboPage() {
              coalesce(kondisi_terkini,'') kondisi_terkini, coalesce(kondisi_awal,'') kondisi_awal,
              coalesce(kondisi_akhir,'') kondisi_akhir, coalesce(status_terkini,'') status_terkini
       from hargi_ht2.ce_abo_findings
-      order by id`,
-    sql`
+      where upper(trim(sub_bidang)) = 'HARGI'
+      order by id` as unknown as CeRow[];
+
+  const lastLog = await sql`
       select sheet_name_ce as sheet_name,
-             to_char(sheet_modified_ce at time zone 'Asia/Jakarta', 'DD Mon YYYY') sheet_mod
+             to_char(sheet_modified_ce::timestamptz at time zone 'Asia/Jakarta', 'DD Mon YYYY') sheet_mod
       from hargi_ht2.refresh_log
       where status = 'success' and finished_at is not null
-      order by id desc limit 1`,
-  ])) as unknown as [CeRow[], { sheet_name: string | null; sheet_mod: string | null }[]];
+      order by id desc limit 1` as unknown as { sheet_name: string | null; sheet_mod: string | null }[];
+
+  const last = lastLog[0] || {};
 
   return (
     <>

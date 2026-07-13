@@ -34,21 +34,23 @@ export function HeroCE({
 }) {
   return (
     <div className="card overflow-hidden">
-      <div className="grid grid-cols-1 divide-y divide-edge lg:[grid-template-columns:1.4fr_1px_1fr_1px_1fr_1px_1fr_1px_1fr] lg:divide-y-0">
-        <TotalPanel stats={stats} />
+      <div className="flex flex-col lg:flex-row lg:divide-x lg:divide-edge divide-y lg:divide-y-0 overflow-x-auto scrollbar-thin items-stretch">
+        <div className="flex shrink-0 lg:w-[22rem] xl:w-[26rem] 2xl:w-[30rem]">
+          <TotalPanel stats={stats} />
+        </div>
         {levels.map((l) => {
           const acc = LEVEL_ACCENT[l.level] ?? FALLBACK_ACCENT;
-          return [
-            <div key={`d-${l.level}`} className="hidden bg-edge lg:block" />,
-            <LevelPanel
-              key={l.level}
-              data={l}
-              accent={acc}
-              active={active === l.level}
-              dimmed={!!active && active !== l.level}
-              onClick={() => onToggle(l.level)}
-            />,
-          ];
+          return (
+            <div key={l.level} className="flex flex-1 min-w-[240px]">
+              <LevelPanel
+                data={l}
+                accent={acc}
+                active={active === l.level}
+                dimmed={!!active && active !== l.level}
+                onClick={() => onToggle(l.level)}
+              />
+            </div>
+          );
         })}
       </div>
     </div>
@@ -101,14 +103,14 @@ function SegBar({ close, open, a, a2 }: { close: number; open: number; a: string
 function TotalPanel({ stats }: { stats: { total: number; open: number; closed: number; progress: number } }) {
   return (
     <div
-      className="relative flex flex-col gap-5 p-4"
+      className="relative flex flex-1 flex-col gap-5 p-4 w-full"
       style={{
         background:
           "radial-gradient(ellipse 55% 80% at 0% 0%, color-mix(in oklab, #10b981 7%, transparent), transparent 60%)",
       }}
     >
       <Caption text="Common Enemy Next Level 2026" />
-      <div className="grid items-end gap-6 [grid-template-columns:auto_1px_auto_1px_auto]">
+      <div className="grid items-end gap-4 [grid-template-columns:auto_1px_auto_1px_auto]">
         <BigStat value={stats.total.toLocaleString("id-ID")} label="Total Temuan" />
         <span className="self-stretch bg-edge" style={{ width: 1 }} />
         <BigStat value={String(stats.open)} label="Open (F/P/C)" color="#f87171" />
@@ -149,7 +151,7 @@ function LevelPanel({
       onKeyDown={(e) => e.key === "Enter" && onClick()}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="relative flex cursor-pointer flex-col gap-4 p-4 transition-[opacity,box-shadow,background] duration-250"
+      className="relative flex flex-1 w-full cursor-pointer flex-col gap-4 p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
       style={{
         background: active ? activeBg : hovered ? hoverBg : baseBg,
         boxShadow: active
@@ -161,7 +163,7 @@ function LevelPanel({
       }}
     >
       <Caption text={data.level} nick={accent.nick} nickColor={accent.a} />
-      <div className="mt-1 grid items-end gap-5 [grid-template-columns:auto_1px_auto]">
+      <div className="mt-1 grid items-end gap-4 [grid-template-columns:auto_1px_auto]">
         <BigStat value={String(data.total)} label="Temuan" />
         <span className="self-stretch bg-edge" style={{ width: 1 }} />
         <BigStat value={`${pct.toFixed(1)}%`} label="Selesai" color={pctColor(pct)} />

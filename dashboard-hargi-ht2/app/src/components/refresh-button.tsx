@@ -11,17 +11,68 @@ export function RefreshButton() {
 
   async function refresh() {
     setState("loading");
-    setMsg("");
+    setMsg("Menyiapkan sinkronisasi...");
+    let logId: number | null = null;
     try {
-      const res = await fetch("/api/refresh", { method: "POST" });
-      const body = await res.json();
-      if (!res.ok || !body.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
+      // 1. Init
+      const initRes = await fetch("/api/sync/init", { method: "POST" });
+      const initBody = await initRes.json();
+      if (!initRes.ok || !initBody.ok) throw new Error(initBody.error ?? `Init failed`);
+      logId = initBody.logId;
+
+      let totalRows = 0;
+
+      // 2. Helper loop untuk chunking
+      async function syncSheet(sheetName: string, label: string) {
+        let hasMore = true;
+        let offset = 0;
+        const limit = 1000;
+        
+        while (hasMore) {
+          setMsg(`Sync ${label} (baris ${offset})...`);
+          const chunkRes = await fetch("/api/sync/chunk", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sheet: sheetName, offset, limit }),
+          });
+          const chunkBody = await chunkRes.json();
+          if (!chunkRes.ok || !chunkBody.ok) throw new Error(chunkBody.error ?? `Chunk failed at ${label} offset ${offset}`);
+          
+          hasMore = chunkBody.hasMore;
+          offset = chunkBody.nextOffset;
+          totalRows += chunkBody.rowCount || 0;
+        }
+      }
+
+      await syncSheet("ce", "CE ABO");
+      await syncSheet("pareto", "Gangguan Trafo");
+      await syncSheet("abo", "ABO 2026");
+      await syncSheet("bushing", "Asesment Bushing");
+
+      // 4. Finish
+      setMsg("Menyelesaikan...");
+      const finishRes = await fetch("/api/sync/finish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logId }),
+      });
+      if (!finishRes.ok) throw new Error("Finish failed");
+
       setState("ok");
-      const total = (Number(body.ce_abo) || 0) + (Number(body.gangguan_trafo) || 0);
-      setMsg(total > 0 ? `${total} baris` : "selesai");
+      setMsg(totalRows > 0 ? `${totalRows} baris tersinkron` : "Selesai (0 baris)");
       router.refresh();
-      setTimeout(() => setState("idle"), 4000);
+      setTimeout(() => {
+        setState("idle");
+        setMsg("");
+      }, 4000);
     } catch (e) {
+      if (logId !== null) {
+        await fetch("/api/sync/finish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ logId, error: e instanceof Error ? e.message : String(e) }),
+        }).catch(() => {});
+      }
       setState("error");
       setMsg(e instanceof Error ? e.message : "Gagal refresh");
     }
@@ -46,7 +97,7 @@ export function RefreshButton() {
         className="flex h-8 items-center gap-2 rounded-lg bg-accent px-3.5 text-[13px] font-semibold text-white shadow-sm transition-all hover:brightness-110 disabled:opacity-60 dark:text-slate-900"
       >
         <RefreshCw className={`h-4 w-4 ${state === "loading" ? "spinning" : ""}`} />
-        {state === "loading" ? "Menarik data…" : "Refresh Data"}
+        {state === "loading" ? (msg || "Menarik data…") : "Refresh Data"}
       </button>
     </div>
   );

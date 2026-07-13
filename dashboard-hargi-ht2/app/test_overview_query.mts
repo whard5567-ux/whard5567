@@ -13,9 +13,9 @@ const base = postgres('postgresql://ht2_diagus.mjgekmjnsipthcswazid:fNgzSz81Rdg~
 const sql = new Proxy(base, {
   apply(target, thisArg, args) {
     const q = Reflect.apply(target as any, thisArg, args as any);
-    if (q && typeof q.cancel === "function" && typeof q.then === "function") {
-      const timer = setTimeout(() => q.cancel(), 30_000);
-      q.then(() => clearTimeout(timer), () => clearTimeout(timer));
+    if (q && typeof (q as any).cancel === "function" && typeof (q as any).then === "function") {
+      const timer = setTimeout(() => (q as any).cancel(), 30_000);
+      (q as any).then(() => clearTimeout(timer), () => clearTimeout(timer));
     }
     return q;
   },

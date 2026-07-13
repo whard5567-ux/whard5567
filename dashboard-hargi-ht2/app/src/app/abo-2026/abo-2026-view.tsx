@@ -195,9 +195,10 @@ export function Abo2026View({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Progress per UPT (Left - 1/3) */}
-          <ChartCard title="Progres per Unit (UPT)" className="rise rise-3 lg:col-span-1 h-[37rem]">
-            <div className="p-2 space-y-4 max-h-full overflow-auto scrollbar-thin">
+          {/* Left Column (1/3) */}
+          <div className="lg:col-span-1 flex flex-col gap-4">
+            <ChartCard title="Progres per Unit (UPT)" className="rise rise-3 flex-1 h-[28rem]">
+              <div className="p-2 space-y-4 max-h-full overflow-auto scrollbar-thin">
               {uptProgress.map((u) => {
                 const anomalies = agg.byUptAnomali.get(u.name);
                 const anomalyList = anomalies ? [...anomalies.entries()].sort((a, b) => b[1] - a[1]) : [];
@@ -230,11 +231,11 @@ export function Abo2026View({
                         }
                         
                         return (
-                          <div key={ano} className="flex items-center text-[9px] rounded bg-surface-2 border border-edge/50 overflow-hidden">
-                            <span className="px-1.5 py-0.5 text-ink-3 truncate max-w-[120px]" title={ano}>
-                              {ano.length > 18 ? ano.slice(0, 15) + '...' : ano}
+                          <div key={ano} className="flex items-stretch text-[9px] rounded bg-surface-2 border border-edge/50 overflow-hidden">
+                            <span className="px-1.5 py-0.5 text-ink-3 flex items-center" title={ano}>
+                              {ano}
                             </span>
-                            <span className="flex items-center px-1.5 py-0.5 bg-surface-solid border-l border-edge/50">
+                            <span className="flex items-center px-1.5 py-0.5 bg-surface-solid border-l border-edge/50 shrink-0">
                               <span className="text-emerald-500 font-bold" title="Close">{c}</span>
                               <span className="text-ink-3 mx-0.5">/</span>
                               <span className="text-red-400 font-bold" title="Open">{o}</span>
@@ -247,13 +248,14 @@ export function Abo2026View({
                 </div>
               )})}
             </div>
-          </ChartCard>
+            </ChartCard>
+            <ChartCard title="Priority Status" className="rise rise-4 h-60 shrink-0">
+              <EChart key="status-chart" option={statusOpt} />
+            </ChartCard>
+          </div>
 
           {/* Charts (Right - 2/3) */}
           <div className="lg:col-span-2 flex flex-col gap-4">
-            <ChartCard title="Priority Status" className="rise rise-4 h-60">
-              <EChart key="status-chart" option={statusOpt} />
-            </ChartCard>
             <ChartCard title="Distribusi Jenis Anomali ABO" className="rise rise-5 flex-1 min-h-80">
               <EChart key="anomali-chart" option={anomaliOpt} />
             </ChartCard>
@@ -332,9 +334,10 @@ export function Abo2026View({
                   ]}
                 >
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    {/* Progress per UPT (Left - 1/3) */}
-                    <ChartCard title="Progres per Unit (UPT)" className="lg:col-span-1 h-[37rem]">
-                      <div className="p-2 space-y-4 max-h-full overflow-auto scrollbar-thin">
+                    {/* Left Column (1/3) */}
+                    <div className="lg:col-span-1 flex flex-col gap-4">
+                      <ChartCard title="Progres per Unit (UPT)" className="flex-1 h-[28rem]">
+                        <div className="p-2 space-y-4 max-h-full overflow-auto scrollbar-thin">
                         {uptProgress.map((u) => {
                           const anomalies = agg.byUptAnomali.get(u.name);
                           const anomalyList = anomalies ? [...anomalies.entries()].sort((a, b) => b[1] - a[1]) : [];
@@ -367,11 +370,11 @@ export function Abo2026View({
                                   }
                                   
                                   return (
-                                    <div key={ano} className="flex items-center text-[9px] rounded bg-surface-2 border border-edge/50 overflow-hidden">
-                                      <span className="px-1.5 py-0.5 text-ink-3 truncate max-w-[120px]" title={ano}>
-                                        {ano.length > 18 ? ano.slice(0, 15) + '...' : ano}
+                                    <div key={ano} className="flex items-stretch text-[9px] rounded bg-surface-2 border border-edge/50 overflow-hidden">
+                                      <span className="px-1.5 py-0.5 text-ink-3 flex items-center" title={ano}>
+                                        {ano}
                                       </span>
-                                      <span className="flex items-center px-1.5 py-0.5 bg-surface-solid border-l border-edge/50">
+                                      <span className="flex items-center px-1.5 py-0.5 bg-surface-solid border-l border-edge/50 shrink-0">
                                         <span className="text-emerald-500 font-bold" title="Close">{c}</span>
                                         <span className="text-ink-3 mx-0.5">/</span>
                                         <span className="text-red-400 font-bold" title="Open">{o}</span>
@@ -384,13 +387,14 @@ export function Abo2026View({
                           </div>
                         )})}
                       </div>
-                    </ChartCard>
+                      </ChartCard>
+                      <ChartCard title="Priority Status" className="h-60 shrink-0">
+                        <EChart key="dk-status-chart" option={statusOpt} />
+                      </ChartCard>
+                    </div>
 
                     {/* Charts (Right - 2/3) */}
                     <div className="lg:col-span-2 flex flex-col gap-4">
-                      <ChartCard title="Priority Status" className="h-60">
-                        <EChart key="dk-status-chart" option={statusOpt} />
-                      </ChartCard>
                       <ChartCard title="Distribusi Jenis Anomali ABO" className="flex-1 min-h-80">
                         <EChart key="dk-anomali-chart" option={anomaliOpt} />
                       </ChartCard>

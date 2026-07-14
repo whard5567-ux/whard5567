@@ -7,7 +7,6 @@ import Image from "next/image";
 import { Zap, TrendingUp, ClipboardList, Map, LayoutDashboard, ChevronLeft, ChevronRight, Activity, ShieldAlert } from "lucide-react";
 
 const NAV = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
   { href: "/pareto", label: "GANGGUAN TRAFO", icon: TrendingUp },
   { href: "/asset-maps", label: "MAPS", icon: Map },
   { href: "/ce-abo", label: "CE 2026", icon: ClipboardList },

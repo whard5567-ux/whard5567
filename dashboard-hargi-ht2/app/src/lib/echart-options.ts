@@ -372,7 +372,7 @@ export function groupedBarOption(
       color: t.tick, 
       fontSize: FONT_LABEL, 
       interval: 0 as const,
-      rotate: rotateLabel !== undefined ? rotateLabel : (horizontal ? 0 : (categories.length > 5 ? 35 : 0)),
+      rotate: rotateLabel !== undefined ? rotateLabel : (horizontal ? 0 : (categories.length > 3 ? 35 : 0)),
       width: horizontal ? undefined : 90,
       overflow: horizontal ? undefined : "break" as const
     },
@@ -409,7 +409,10 @@ export function groupedBarOption(
         position: (horizontal ? "right" : "top") as "right" | "top",
         color: t.tickStrong,
         fontWeight: "bold" as const,
-        fontSize: 10,
+        fontSize: horizontal ? 10 : 9,
+        rotate: horizontal ? 0 : 90,
+        align: horizontal ? "left" : "left",
+        verticalAlign: horizontal ? "middle" : "middle",
         formatter: (p: DefaultLabelFormatterCallbackParams) =>
           Number(p.value) > 0 ? String(p.value) : "",
       },

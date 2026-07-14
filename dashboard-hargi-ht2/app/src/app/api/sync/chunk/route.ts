@@ -82,7 +82,8 @@ function mapCeAbo(rows: Row[]) {
   return rows
     .filter((r) => {
       const sub = clean(r[col.sub_bidang]).toUpperCase();
-      return sub === "HARGI" || sub.includes("HARGI");
+      const ht = hartrans ? clean(r[hartrans]).toUpperCase() : "";
+      return sub === "HARGI" && (!hartrans || ht === "HARTRANS 2");
     })
     .map((r) => ({
       kode: clean(r[col.kode]),
@@ -232,10 +233,19 @@ export async function POST(req: Request) {
       };
 
       const sb = letterOf("sub", "bidang");
-      const st = letterOf("status", "terkini");
-      const ka = letterOf("kondisi", "akhir");
       
-      const whereCondition = `upper(${sb}) contains 'HARGI'`;
+      const optLetterOf = (...terms: string[]) => {
+        const idx = headers.findIndex((h) =>
+          terms.every((t) => h.toLowerCase().includes(t.toLowerCase())));
+        if (idx < 0) return null;
+        return colLetter(idx);
+      };
+      
+      const ht = optLetterOf("hartrans");
+      let whereCondition = `upper(${sb}) = 'HARGI'`;
+      if (ht) {
+        whereCondition += ` and upper(${ht}) = 'HARTRANS 2'`;
+      }
       
       const query = `select * where ${whereCondition} limit ${limit} offset ${offset}`;
       const ceRaw = await fetchCsv(gvizUrl(CE_ABO, query));

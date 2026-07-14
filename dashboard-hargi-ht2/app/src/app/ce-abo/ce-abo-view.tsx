@@ -325,7 +325,7 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
                     <td colSpan={5} className="px-1.5 text-right text-[10px] font-normal italic text-ink-3">
                       rincian per kategori
                     </td>
-                    <td className="num px-1.5 text-center">{targetAwalAgg.stats.total}</td>
+                    <td className="num px-1.5 text-center">{targetAwalAgg.levelSummaryTerkini.reduce((s, i) => s + i.total, 0)}</td>
                   </tr>
                 </tfoot>
               </table>

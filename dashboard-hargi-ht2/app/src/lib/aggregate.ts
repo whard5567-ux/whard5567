@@ -392,3 +392,78 @@ export function aboAggregate(rows: AboRow[]) {
     byUpt, byStatus, byAnomali, byAnomaliStatus, byUptAnomali, byUptAnomaliStatus,
   };
 }
+
+export type MtuRow = {
+  id: string;
+  prk: string;
+  upt: string;
+  gardu_induk: string;
+  pabrikan: string;
+  status_peruntukan: string;
+  mtu: string;
+  type_mtu: string;
+  progres_saat_ini: string;
+  penyedia_jasa_pasang: string;
+  rencana_pasang_mtu: string;
+  bulan: string;
+  kolom_aq: string;
+  tahun_kr: string;
+};
+
+export type MtuFilters = {
+  upt: string[];
+  gardu_induk: string[];
+  mtu: string[];
+  pabrikan: string[];
+};
+
+export function mtuAvailableFilters(rows: MtuRow[]): MtuFilters {
+  const uniq = (vals: string[]) => [...new Set(vals.filter(Boolean))].sort();
+  return {
+    upt: uniq(rows.map((r) => r.upt)),
+    gardu_induk: uniq(rows.map((r) => r.gardu_induk)),
+    mtu: uniq(rows.map((r) => r.mtu)),
+    pabrikan: uniq(rows.map((r) => r.pabrikan)),
+  };
+}
+
+export function mtuFilterRows(rows: MtuRow[], f: MtuFilters): MtuRow[] {
+  return rows.filter(
+    (r) =>
+      (f.upt.length === 0 || f.upt.includes(r.upt)) &&
+      (f.gardu_induk.length === 0 || f.gardu_induk.includes(r.gardu_induk)) &&
+      (f.mtu.length === 0 || f.mtu.includes(r.mtu)) &&
+      (f.pabrikan.length === 0 || f.pabrikan.includes(r.pabrikan))
+  );
+}
+
+export function mtuAggregate(rows: MtuRow[]) {
+  const total = rows.length;
+  // TELAH SELESAI dihitung dari jumlah baris yang memiliki tanggal di Kolom AQ (REALISASI PASANG MTU)
+  const closed = rows.filter((r) => (r.kolom_aq || "").trim() !== "").length;
+  const progress = total > 0 ? Math.round((closed / total) * 10000) / 100 : 0;
+
+  const byUpt = countBy(rows, (r) => r.upt);
+  const byMtu = countBy(rows, (r) => r.mtu);
+  const byProgres = countBy(rows, (r) => r.progres_saat_ini);
+  const byPabrikan = countBy(rows, (r) => r.pabrikan);
+  const byUptProgres = countBy2(rows, (r) => r.upt, (r) => r.progres_saat_ini);
+  const byUptMtu = countBy2(rows, (r) => r.upt, (r) => r.mtu);
+  const byBulan = countBy(rows, (r) => r.bulan);
+  const byKolomAq = countBy(rows, (r) => r.kolom_aq);
+  const byTahunKr = countBy(rows, (r) => r.tahun_kr);
+
+  const byUptDiganti = new Map<string, number>();
+  for (const r of rows) {
+    if (r.kolom_aq && r.kolom_aq.trim() !== "") {
+      const k = r.upt || "Kosong";
+      byUptDiganti.set(k, (byUptDiganti.get(k) || 0) + 1);
+    }
+  }
+
+  return {
+    stats: { total, closed, progress },
+    byUpt, byMtu, byProgres, byPabrikan, byUptProgres, byUptMtu, byBulan, byKolomAq, byUptDiganti, byTahunKr
+  };
+}
+

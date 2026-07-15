@@ -15,6 +15,10 @@ export const ABO_2026_SHEET = {
   id: "11HQFitHH8xISZvVxuG0rd0q84Y6tOtCi7jO7wDbUeVs",
   gid: "1761063736",
 };
+export const PENGGANTIAN_MTU_SHEET = {
+  id: "1o4X0Fwxi14b50yNNECqNHnec8VM4ij62zNSWHNQ4K_s",
+  gid: "1674311415",
+};
 
 export function sheetEditUrl(s: { id: string; gid: string }) {
   return `https://docs.google.com/spreadsheets/d/${s.id}/edit#gid=${s.gid}`;

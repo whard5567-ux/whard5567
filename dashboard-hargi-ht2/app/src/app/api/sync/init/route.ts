@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const { targets = ["ce", "pareto", "abo", "bushing"] } = await req.json().catch(() => ({}));
+    const { targets = ["ce", "pareto", "abo", "bushing", "mtu"] } = await req.json().catch(() => ({}));
     const [logRow] = await sql`
       insert into hargi_ht2.refresh_log (source) values ('chunked_sync') returning id`;
       
@@ -14,6 +14,7 @@ export async function POST(req: Request) {
       if (targets.includes("pareto")) await tx`delete from hargi_ht2.gangguan_trafo`;
       if (targets.includes("abo")) await tx`delete from hargi_ht2.abo_2026`;
       if (targets.includes("bushing")) await tx`delete from hargi_ht2.asesment_bushing`;
+      if (targets.includes("mtu")) await tx`delete from hargi_ht2.penggantian_mtu`;
     });
     
     return Response.json({ ok: true, logId: logRow.id });

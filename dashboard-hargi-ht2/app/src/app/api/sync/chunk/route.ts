@@ -7,6 +7,7 @@ const CE_ABO = { id: "1-eC0GdeMwYDhnGzCSM8viO0HvD6X0NdlMaWOxe2P9ZM", gid: "29915
 const PARETO = { id: "1hf_lpXI6x3hBDfEHX8r8q15w6F3wtlzIABGibdpCMhg", gid: "1882488493" };
 const ABO_2026 = { id: "11HQFitHH8xISZvVxuG0rd0q84Y6tOtCi7jO7wDbUeVs", gid: "1761063736" };
 const ASESMENT_BUSHING = { id: "1_bBncuTGo8s687UOP9XuU1ObhmTxDlPFXZzwVqYBs3M", gid: "0" };
+const PENGGANTIAN_MTU = { id: "1o4X0Fwxi14b50yNNECqNHnec8VM4ij62zNSWHNQ4K_s", gid: "1674311415" };
 
 type Row = Record<string, string>;
 
@@ -215,6 +216,95 @@ function mapAsesmentBushing(rows: string[][]) {
     });
 }
 
+function mapPenggantianMtu(rows: string[][]) {
+  if (rows.length < 3) return [];
+  // Cari baris yang punya teks 'PRK' dan 'UPT' (biasanya baris ke-3 / index 2)
+  let headerIdx = rows.findIndex(r => r.some(c => clean(c).toUpperCase() === 'PRK'));
+  if (headerIdx === -1) headerIdx = 2; // fallback
+  
+  const headers = rows[headerIdx];
+  const dataRows = rows.slice(headerIdx + 1);
+
+  const opt = (...terms: string[]) =>
+    headers.findIndex((h) => terms.every((t) => h.toLowerCase().includes(t.toLowerCase())));
+
+  const col = {
+    prk: opt("prk"),
+    upt: opt("upt"),
+    gardu_induk: opt("gi", "gitet") !== -1 ? opt("gi", "gitet") : opt("gardu", "induk"),
+    tahun_kr: opt("tahun", "kr") !== -1 ? opt("tahun", "kr") : 7,
+    kontrak_rinci: opt("kontrak", "rinci"),
+    pabrikan: opt("pabrikan"),
+    sat: opt("sat"),
+    status_peruntukan: opt("status", "peruntukan"),
+    mtu: opt("mtu"),
+    type_mtu: opt("type", "mtu"),
+    rfq: opt("rfq", "code") || opt("rfq"),
+    fasa: opt("fasa"),
+    nomor_seri: opt("nomor", "seri"),
+    progres_saat_ini: opt("progres", "saat", "ini"),
+    dokumen_fat: opt("dokumen", "fat"),
+    surat_jalan: opt("surat", "jalan"),
+    no_delivery_order: opt("delivery", "order"),
+    ba_pemeriksaan: opt("ba", "pemeriksaan"),
+    supervisi: opt("supervisi"),
+    kondisi_update_gi: opt("kondisi", "update"),
+    penyedia_jasa_pasang: opt("penyedia", "jasa"),
+    nomor_jasa_pasang: opt("nomor", "jasa"),
+    rencana_pasang_mtu: opt("rencana", "pasang"),
+    berita_acara: opt("berita", "acara"),
+    relokasi: opt("relokasi"),
+    relokasi_upt: headers.findIndex((h) => h.toLowerCase().includes("relokasi") && h.toLowerCase().includes("upt")),
+    relokasi_gardu_induk: headers.findIndex((h) => h.toLowerCase().includes("relokasi") && h.toLowerCase().includes("gardu")),
+    relokasi_bay: headers.findIndex((h) => h.toLowerCase().includes("relokasi") && h.toLowerCase().includes("bay")),
+    ket_jadwal: opt("ket", "jadwal"),
+    code_rfq: opt("code", "rfq"),
+    keterangan: headers.findIndex((h) => h.toLowerCase() === "keterangan"),
+    harga_aksesoris: opt("harga", "aksesoris"),
+    bulan: opt("bulan"),
+  };
+
+  return dataRows
+    .filter((r) => col.upt >= 0 && clean(r[col.upt]) !== "" || (col.mtu >= 0 && clean(r[col.mtu]) !== ""))
+    .map((r) => ({
+      prk: col.prk >= 0 ? clean(r[col.prk]) : "",
+      upt: col.upt >= 0 ? clean(r[col.upt]) : "",
+      gardu_induk: col.gardu_induk >= 0 ? clean(r[col.gardu_induk]) : "",
+      tahun_kr: col.tahun_kr >= 0 ? clean(r[col.tahun_kr]) : "",
+      kontrak_rinci: col.kontrak_rinci >= 0 ? clean(r[col.kontrak_rinci]) : "",
+      pabrikan: col.pabrikan >= 0 ? clean(r[col.pabrikan]) : "",
+      sat: col.sat >= 0 ? clean(r[col.sat]) : "",
+      status_peruntukan: col.status_peruntukan >= 0 ? clean(r[col.status_peruntukan]) : "",
+      mtu: col.mtu >= 0 ? clean(r[col.mtu]) : "",
+      type_mtu: col.type_mtu >= 0 ? clean(r[col.type_mtu]) : "",
+      rfq: col.rfq >= 0 ? clean(r[col.rfq]) : "",
+      fasa: col.fasa >= 0 ? clean(r[col.fasa]) : "",
+      nomor_seri: col.nomor_seri >= 0 ? clean(r[col.nomor_seri]) : "",
+      progres_saat_ini: col.progres_saat_ini >= 0 ? clean(r[col.progres_saat_ini]) : "",
+      dokumen_fat: col.dokumen_fat >= 0 ? clean(r[col.dokumen_fat]) : "",
+      surat_jalan: col.surat_jalan >= 0 ? clean(r[col.surat_jalan]) : "",
+      no_delivery_order: col.no_delivery_order >= 0 ? clean(r[col.no_delivery_order]) : "",
+      ba_pemeriksaan: col.ba_pemeriksaan >= 0 ? clean(r[col.ba_pemeriksaan]) : "",
+      supervisi: col.supervisi >= 0 ? clean(r[col.supervisi]) : "",
+      kondisi_update_gi: col.kondisi_update_gi >= 0 ? clean(r[col.kondisi_update_gi]) : "",
+      penyedia_jasa_pasang: col.penyedia_jasa_pasang >= 0 ? clean(r[col.penyedia_jasa_pasang]) : "",
+      nomor_jasa_pasang: col.nomor_jasa_pasang >= 0 ? clean(r[col.nomor_jasa_pasang]) : "",
+      rencana_pasang_mtu: col.rencana_pasang_mtu >= 0 ? clean(r[col.rencana_pasang_mtu]) : "",
+      berita_acara: col.berita_acara >= 0 ? clean(r[col.berita_acara]) : "",
+      relokasi: col.relokasi >= 0 ? clean(r[col.relokasi]) : "",
+      relokasi_upt: col.relokasi_upt >= 0 ? clean(r[col.relokasi_upt]) : "",
+      relokasi_gardu_induk: col.relokasi_gardu_induk >= 0 ? clean(r[col.relokasi_gardu_induk]) : "",
+      relokasi_bay: col.relokasi_bay >= 0 ? clean(r[col.relokasi_bay]) : "",
+      ket_jadwal: col.ket_jadwal >= 0 ? clean(r[col.ket_jadwal]) : "",
+      code_rfq: col.code_rfq >= 0 ? clean(r[col.code_rfq]) : "",
+      keterangan: col.keterangan >= 0 ? clean(r[col.keterangan]) : "",
+      harga_aksesoris: col.harga_aksesoris >= 0 ? clean(r[col.harga_aksesoris]) : "",
+      bulan: col.bulan >= 0 ? clean(r[col.bulan]) : "",
+      kolom_aq: r.length > 42 ? clean(r[42]) : "",
+      raw: Object.fromEntries(r.map((val, i) => [`col_${i}`, clean(val)])),
+    }));
+}
+
 export async function POST(req: Request) {
   try {
     const { sheet, offset = 0, limit = 5000 } = await req.json();
@@ -300,6 +390,20 @@ export async function POST(req: Request) {
         });
       }
       return Response.json({ ok: true, hasMore: bushingRaw.length >= limit, nextOffset: offset + limit, rowCount: bushing.length });
+    } else if (sheet === "mtu") {
+      if (offset > 0) return Response.json({ ok: true, hasMore: false, nextOffset: offset, rowCount: 0 });
+      // Gunakan /export?format=csv agar mengabaikan filter UI yang sedang aktif di Spreadsheet
+      const url = `https://docs.google.com/spreadsheets/d/${PENGGANTIAN_MTU.id}/export?format=csv&gid=${PENGGANTIAN_MTU.gid}`;
+      const mtuRaw = await fetchSheetRowsAsArray(url);
+      const mtu = mapPenggantianMtu(mtuRaw);
+      if (mtu.length > 0) {
+        await sql.begin(async (tx) => {
+          for (let i = 0; i < mtu.length; i += 200) {
+            await tx`insert into hargi_ht2.penggantian_mtu ${tx(mtu.slice(i, i + 200))}`;
+          }
+        });
+      }
+      return Response.json({ ok: true, hasMore: mtuRaw.length >= limit, nextOffset: offset + limit, rowCount: mtu.length });
     }
 
     return Response.json({ ok: false, error: "Unknown sheet" }, { status: 400 });

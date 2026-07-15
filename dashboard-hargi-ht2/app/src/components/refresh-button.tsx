@@ -52,6 +52,7 @@ export function RefreshButton({ targets = ["ce", "pareto", "abo", "bushing"] }: 
       if (targets.includes("pareto")) await syncSheet("pareto", "Gangguan Trafo");
       if (targets.includes("abo")) await syncSheet("abo", "ABO 2026");
       if (targets.includes("bushing")) await syncSheet("bushing", "Asesment Bushing");
+      if (targets.includes("mtu")) await syncSheet("mtu", "Penggantian MTU");
 
       // 4. Finish
       setMsg("Menyelesaikan...");

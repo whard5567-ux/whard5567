@@ -25,16 +25,31 @@ export function MultiSelect({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  const allSelected = selected.length === 0 || selected.length === options.length;
+  const isNone = selected.length === 1 && selected[0] === "__NONE__";
+  const allSelected = !isNone && (selected.length === 0 || selected.length === options.length);
+  
   const display = allSelected
     ? "Semua"
-    : selected.length === 1
-      ? selected[0]
-      : `${selected.length} terpilih`;
+    : isNone
+      ? "Pilih..."
+      : selected.length === 1
+        ? selected[0]
+        : `${selected.length} terpilih`;
 
   function toggle(value: string) {
-    if (selected.includes(value)) onChange(selected.filter((v) => v !== value));
-    else onChange([...selected, value]);
+    if (allSelected || isNone) {
+      // Jika semua terpilih ATAU kosong, klik item langsung memilih HANYA item tersebut
+      onChange([value]);
+    } else {
+      if (selected.includes(value)) {
+        const next = selected.filter((v) => v !== value);
+        onChange(next.length === 0 ? ["__NONE__"] : next);
+      } else {
+        const next = [...selected, value];
+        if (next.length === options.length) onChange([]);
+        else onChange(next);
+      }
+    }
   }
 
   return (
@@ -67,7 +82,10 @@ export function MultiSelect({
         <div className="absolute left-0 top-full z-50 mt-1.5 max-h-72 w-60 overflow-y-auto rounded-lg border border-edge bg-surface-solid p-1 shadow-xl scrollbar-thin">
           <button
             type="button"
-            onClick={() => onChange([])}
+            onClick={() => {
+              if (allSelected) onChange(["__NONE__"]);
+              else onChange([]);
+            }}
             className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[13px] font-semibold hover:bg-surface-2"
           >
             <span className={`flex h-4 w-4 items-center justify-center rounded border ${allSelected ? "border-accent bg-accent text-white dark:text-slate-900" : "border-edge-strong"}`}>
@@ -77,7 +95,7 @@ export function MultiSelect({
           </button>
           <div className="mx-2 my-1 border-t border-edge" />
           {options.map((opt) => {
-            const on = selected.includes(opt);
+            const on = allSelected || (!isNone && selected.includes(opt));
             return (
               <button
                 key={opt}

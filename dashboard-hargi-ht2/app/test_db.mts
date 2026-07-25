@@ -1,4 +1,4 @@
-import { sql } from './src/lib/db.ts';
+import { sql } from './src/lib/db';
 async function test() {
   const r = await sql`select * from hargi_ht2.penggantian_mtu limit 1`;
   console.log(Object.keys(r[0] || {}));

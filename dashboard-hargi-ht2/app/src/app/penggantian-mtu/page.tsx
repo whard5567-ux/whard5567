@@ -11,12 +11,13 @@ export const fetchCache = "force-no-store";
 export default async function PenggantianMtuPage() {
   const rows = await sql`
       select coalesce(prk,'') prk, coalesce(upt,'') upt,
-             coalesce(gardu_induk,'') gardu_induk, coalesce(pabrikan,'') pabrikan,
+             coalesce(gardu_induk,'') gardu_induk, coalesce(bay,'') bay, coalesce(kontrak_rinci,'') kontrak_rinci, coalesce(pabrikan,'') pabrikan,
              coalesce(status_peruntukan,'') status_peruntukan, coalesce(mtu,'') mtu,
              coalesce(type_mtu,'') type_mtu, coalesce(progres_saat_ini,'') progres_saat_ini,
              coalesce(penyedia_jasa_pasang,'') penyedia_jasa_pasang, 
              coalesce(rencana_pasang_mtu,'') rencana_pasang_mtu, coalesce(bulan,'') bulan,
-             coalesce(kolom_aq,'') kolom_aq, coalesce(tahun_kr,'') tahun_kr
+             coalesce(kolom_aq,'') kolom_aq, coalesce(tahun_kr,'') tahun_kr,
+             coalesce(rfq,'') rfq
       from hargi_ht2.penggantian_mtu
       order by id` as unknown as MtuRow[];
 

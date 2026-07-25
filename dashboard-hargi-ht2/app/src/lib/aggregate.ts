@@ -181,6 +181,20 @@ export function ceAggregate(rows: CeRow[]) {
     })
     .sort((a, b) => b.total - a.total);
 
+  const byUptTerkini = countByCond(rows, (r) => r.upt, (r) => r.kondisi_akhir);
+  const uptSummaryTerkini = [...byUptTerkini.entries()]
+    .map(([name, conds]) => {
+      const vg = conds.get("Very Good") ?? 0;
+      const g = conds.get("Good") ?? 0;
+      const f = conds.get("Fair") ?? 0;
+      const p = conds.get("Poor") ?? 0;
+      const c = conds.get("Critical") ?? 0;
+      const total = vg + g + f + p + c;
+      const progress = total > 0 ? Math.round(((vg + g) / total) * 10000) / 100 : 0;
+      return { name, vg, g, f, p, c, total, progress };
+    })
+    .sort((a, b) => b.total - a.total);
+
   // Rekap GIS: aggregate stats for rows where Level Anomali is GIS
   const gisRows = findingRows.filter(isGis);
   const gisTotal = gisRows.length;
@@ -256,7 +270,7 @@ export function ceAggregate(rows: CeRow[]) {
   return {
     stats: { total, closed, open, progress },
     kaSummary, kondisiAwal, kondisiTerkini, byUpt, bySubBidang, byLevel,
-    uraianTop, byLevelUraian, levelSummary, levelSummaryTerkini, uptSummary, gisSummary,
+    uraianTop, byLevelUraian, levelSummary, levelSummaryTerkini, uptSummary, uptSummaryTerkini, gisSummary,
     focusUraian, priorityList, trafoUraian, mvApparatusUraian, switchYardUraian,
   };
 }
@@ -398,6 +412,8 @@ export type MtuRow = {
   prk: string;
   upt: string;
   gardu_induk: string;
+  bay: string;
+  kontrak_rinci: string;
   pabrikan: string;
   status_peruntukan: string;
   mtu: string;
@@ -408,6 +424,7 @@ export type MtuRow = {
   bulan: string;
   kolom_aq: string;
   tahun_kr: string;
+  rfq: string;
 };
 
 export type MtuFilters = {
@@ -415,6 +432,8 @@ export type MtuFilters = {
   gardu_induk: string[];
   mtu: string[];
   pabrikan: string[];
+  progres_saat_ini: string[];
+  search?: string;
 };
 
 export function mtuAvailableFilters(rows: MtuRow[]): MtuFilters {
@@ -424,16 +443,25 @@ export function mtuAvailableFilters(rows: MtuRow[]): MtuFilters {
     gardu_induk: uniq(rows.map((r) => r.gardu_induk)),
     mtu: uniq(rows.map((r) => r.mtu)),
     pabrikan: uniq(rows.map((r) => r.pabrikan)),
+    progres_saat_ini: uniq(rows.map((r) => r.progres_saat_ini)),
   };
 }
 
 export function mtuFilterRows(rows: MtuRow[], f: MtuFilters): MtuRow[] {
+  const q = (f.search || "").toLowerCase();
   return rows.filter(
     (r) =>
       (f.upt.length === 0 || f.upt.includes(r.upt)) &&
       (f.gardu_induk.length === 0 || f.gardu_induk.includes(r.gardu_induk)) &&
       (f.mtu.length === 0 || f.mtu.includes(r.mtu)) &&
-      (f.pabrikan.length === 0 || f.pabrikan.includes(r.pabrikan))
+      (f.pabrikan.length === 0 || f.pabrikan.includes(r.pabrikan)) &&
+      (f.progres_saat_ini.length === 0 || f.progres_saat_ini.includes(r.progres_saat_ini)) &&
+      (!q ||
+        (r.prk || "").toLowerCase().includes(q) ||
+        (r.gardu_induk || "").toLowerCase().includes(q) ||
+        (r.mtu || "").toLowerCase().includes(q) ||
+        (r.type_mtu || "").toLowerCase().includes(q) ||
+        (r.pabrikan || "").toLowerCase().includes(q))
   );
 }
 
@@ -452,6 +480,7 @@ export function mtuAggregate(rows: MtuRow[]) {
   const byBulan = countBy(rows, (r) => r.bulan);
   const byKolomAq = countBy(rows, (r) => r.kolom_aq);
   const byTahunKr = countBy(rows, (r) => r.tahun_kr);
+  const byStatusPeruntukan = countBy(rows, (r) => r.status_peruntukan);
 
   const byUptDiganti = new Map<string, number>();
   for (const r of rows) {
@@ -463,7 +492,7 @@ export function mtuAggregate(rows: MtuRow[]) {
 
   return {
     stats: { total, closed, progress },
-    byUpt, byMtu, byProgres, byPabrikan, byUptProgres, byUptMtu, byBulan, byKolomAq, byUptDiganti, byTahunKr
+    byUpt, byMtu, byProgres, byPabrikan, byUptProgres, byUptMtu, byBulan, byKolomAq, byUptDiganti, byTahunKr, byStatusPeruntukan
   };
 }
 

@@ -232,12 +232,13 @@ function mapPenggantianMtu(rows: string[][]) {
     prk: opt("prk"),
     upt: opt("upt"),
     gardu_induk: opt("gi", "gitet") !== -1 ? opt("gi", "gitet") : opt("gardu", "induk"),
+    bay: 4, // Kolom E (karena headernya kosong/tidak bernama)
     tahun_kr: opt("tahun", "kr") !== -1 ? opt("tahun", "kr") : 7,
     kontrak_rinci: opt("kontrak", "rinci"),
     pabrikan: opt("pabrikan"),
     sat: opt("sat"),
     status_peruntukan: opt("status", "peruntukan"),
-    mtu: opt("mtu"),
+    mtu: 11, // Kolom L
     type_mtu: opt("type", "mtu"),
     rfq: opt("rfq", "code") || opt("rfq"),
     fasa: opt("fasa"),
@@ -270,6 +271,7 @@ function mapPenggantianMtu(rows: string[][]) {
       prk: col.prk >= 0 ? clean(r[col.prk]) : "",
       upt: col.upt >= 0 ? clean(r[col.upt]) : "",
       gardu_induk: col.gardu_induk >= 0 ? clean(r[col.gardu_induk]) : "",
+      bay: col.bay >= 0 ? clean(r[col.bay]) : "",
       tahun_kr: col.tahun_kr >= 0 ? clean(r[col.tahun_kr]) : "",
       kontrak_rinci: col.kontrak_rinci >= 0 ? clean(r[col.kontrak_rinci]) : "",
       pabrikan: col.pabrikan >= 0 ? clean(r[col.pabrikan]) : "",

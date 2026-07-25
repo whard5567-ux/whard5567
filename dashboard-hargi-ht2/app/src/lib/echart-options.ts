@@ -38,8 +38,8 @@ export function pieOption(t: ChartTheme, slices: Slice[]): EChartsOption {
     series: [
       {
         type: "pie",
-        radius: ["38%", "60%"],
-        center: ["50%", "42%"],
+        radius: ["35%", "50%"],
+        center: ["50%", "45%"],
         // irisan sekecil apapun dijamin kebagian busur minimal 7° biar KELIHATAN
         minAngle: 7,
         data: slices.map((s) => ({
@@ -55,13 +55,14 @@ export function pieOption(t: ChartTheme, slices: Slice[]): EChartsOption {
             `${p.value} (${(p.percent ?? 0).toFixed(1)}%)`,
           color: t.tickStrong,
           fontWeight: "bold",
-          fontSize: 12,
-          lineHeight: 15,
+          fontSize: 11,
+          lineHeight: 14,
+          overflow: "none",
         },
         // geser otomatis label yang saling timpa (vertikal)
-        labelLayout: { moveOverlap: "shiftY" },
+        labelLayout: { moveOverlap: "shiftY", hideOverlap: false },
         // garis pendek nekuk, label dekat irisan (gaya yang disukai user)
-        labelLine: { show: true, length: 14, length2: 10, lineStyle: { color: t.tick } },
+        labelLine: { show: true, length: 10, length2: 8, lineStyle: { color: t.tick } },
         emphasis: { scaleSize: 6 },
         animationDuration: 500,
       },
@@ -99,6 +100,7 @@ export function stackedBarOption(
   return {
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, formatter: axisTooltipNoZero, ...tooltipPreset(t) },
     legend: {
+      data: series.map(s => s.name),
       [legendTop ? "top" : "bottom"]: 0,
       type: "scroll",
       itemWidth: 10,

@@ -347,8 +347,8 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
       {/* UPT: tabel + grafik disatukan */}
       <div className="grid grid-cols-1 mt-3">
         <ChartCard title="Ringkasan & Distribusi per UPT" className="rise rise-3">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <div className="overflow-x-auto scrollbar-thin">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center lg:items-start">
+            <div className="overflow-x-auto scrollbar-thin lg:col-span-5 xl:col-span-4">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-edge text-left text-[10px] uppercase tracking-wider text-ink-3">
@@ -362,7 +362,7 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {agg.uptSummary.map((u) => (
+                  {targetAwalAgg.uptSummaryTerkini.map((u) => (
                     <tr key={u.name} className="border-b border-edge/50 transition-colors hover:bg-surface-2">
                       <td className="py-2 pr-2 font-medium">{u.name}</td>
                       <td className="num px-2 text-center text-blue-500">{u.vg}</td>
@@ -376,8 +376,8 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
                 </tbody>
               </table>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {agg.uptSummary.map((u) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 lg:col-span-7 xl:col-span-8">
+              {targetAwalAgg.uptSummaryTerkini.map((u) => {
                 const slices = [
                   { name: "Critical", value: u.c, color: conditionColor("Critical") },
                   { name: "Poor", value: u.p, color: conditionColor("Poor") },

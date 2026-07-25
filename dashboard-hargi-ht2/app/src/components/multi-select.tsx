@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, X } from "lucide-react";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { Check, ChevronDown, X, Search } from "lucide-react";
 
 export function MultiSelect({
   label,
@@ -15,11 +15,15 @@ export function MultiSelect({
   onChange: (next: string[]) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSearch("");
+      }
     }
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
@@ -51,6 +55,12 @@ export function MultiSelect({
       }
     }
   }
+
+  const filteredOptions = useMemo(() => {
+    if (!search) return options;
+    const q = search.toLowerCase();
+    return options.filter(opt => opt.toLowerCase().includes(q));
+  }, [options, search]);
 
   return (
     <div ref={ref} className="relative">
@@ -93,8 +103,25 @@ export function MultiSelect({
             </span>
             Semua
           </button>
+          
+          {options.length > 5 && (
+            <div className="px-2 py-1.5">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-3" />
+                <input
+                  type="text"
+                  placeholder="Cari..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full rounded-md border border-edge bg-surface-2 py-1 pl-7 pr-2 text-xs text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+          )}
+          
           <div className="mx-2 my-1 border-t border-edge" />
-          {options.map((opt) => {
+          {filteredOptions.length > 0 ? filteredOptions.map((opt) => {
             const on = allSelected || (!isNone && selected.includes(opt));
             return (
               <button
@@ -109,7 +136,9 @@ export function MultiSelect({
                 <span className="truncate">{opt}</span>
               </button>
             );
-          })}
+          }) : (
+            <div className="px-2.5 py-2 text-center text-xs text-ink-3">Tidak ditemukan</div>
+          )}
         </div>
       )}
     </div>

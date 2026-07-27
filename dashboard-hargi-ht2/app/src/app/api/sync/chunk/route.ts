@@ -127,7 +127,7 @@ function mapPareto(rows: Row[]) {
   const mvaCol = headers.find((h) => h.trim().toUpperCase() === "MVA");
 
   return rows
-    .filter((r) => clean(r[kategoriCol]) !== "" || clean(r[unitCol]) !== "")
+    .filter((r) => clean(r[kategoriCol]) !== "")
     .map((r) => ({
       no: noCol ? clean(r[noCol]) : "",
       tgl_keluar: tglCol ? clean(r[tglCol]) : "",
@@ -312,33 +312,9 @@ export async function POST(req: Request) {
     const { sheet, offset = 0, limit = 5000 } = await req.json();
 
     if (sheet === "ce") {
-      // Dapatkan header dulu
-      const headerRows = await fetchCsv(gvizUrl(CE_ABO, "select * limit 1"));
-      if (headerRows.length === 0) throw new Error("Sheet CE kosong.");
-      const headers = Object.keys(headerRows[0]);
-      
-      const letterOf = (...terms: string[]) => {
-        const idx = headers.findIndex((h) =>
-          terms.every((t) => h.toLowerCase().includes(t.toLowerCase())));
-        if (idx < 0) throw new Error(`Kolom [${terms.join(", ")}] tidak ketemu.`);
-        return colLetter(idx);
-      };
-
-      const sb = letterOf("sub", "bidang");
-      
-      const optLetterOf = (...terms: string[]) => {
-        const idx = headers.findIndex((h) =>
-          terms.every((t) => h.toLowerCase().includes(t.toLowerCase())));
-        if (idx < 0) return null;
-        return colLetter(idx);
-      };
-      
-      const ht = optLetterOf("hartrans");
-      let whereCondition = `upper(${sb}) = 'HARGI'`;
-      
-      const query = `select * where ${whereCondition} limit ${limit} offset ${offset}`;
-      const ceRaw = await fetchCsv(gvizUrl(CE_ABO, query));
-      
+      if (offset > 0) return Response.json({ ok: true, hasMore: false, nextOffset: offset, rowCount: 0 });
+      const url = `https://docs.google.com/spreadsheets/d/${CE_ABO.id}/export?format=csv&gid=${CE_ABO.gid}`;
+      const ceRaw = await fetchCsv(url);
       const ce = mapCeAbo(ceRaw);
       
       if (ce.length > 0) {
@@ -348,12 +324,12 @@ export async function POST(req: Request) {
           }
         });
       }
-
-      return Response.json({ ok: true, hasMore: ceRaw.length >= limit, nextOffset: offset + limit, rowCount: ce.length });
+      return Response.json({ ok: true, hasMore: false, nextOffset: offset, rowCount: ce.length });
 
     } else if (sheet === "pareto") {
-      const query = `select * limit ${limit} offset ${offset}`;
-      const ggnRaw = await fetchCsv(gvizUrl(PARETO, query));
+      if (offset > 0) return Response.json({ ok: true, hasMore: false, nextOffset: offset, rowCount: 0 });
+      const url = `https://docs.google.com/spreadsheets/d/${PARETO.id}/export?format=csv&gid=${PARETO.gid}`;
+      const ggnRaw = await fetchCsv(url);
       const ggn = mapPareto(ggnRaw);
       if (ggn.length > 0) {
         await sql.begin(async (tx) => {
@@ -362,7 +338,7 @@ export async function POST(req: Request) {
           }
         });
       }
-      return Response.json({ ok: true, hasMore: ggnRaw.length >= limit, nextOffset: offset + limit, rowCount: ggn.length });
+      return Response.json({ ok: true, hasMore: false, nextOffset: offset, rowCount: ggn.length });
 
     } else if (sheet === "abo") {
       if (offset > 0) return Response.json({ ok: true, hasMore: false, nextOffset: offset, rowCount: 0 });
@@ -380,8 +356,9 @@ export async function POST(req: Request) {
       return Response.json({ ok: true, hasMore: aboRaw.length >= limit, nextOffset: offset + limit, rowCount: abo.length });
 
     } else if (sheet === "bushing") {
-      const query = `select * limit ${limit} offset ${offset}`;
-      const bushingRaw = await fetchSheetRowsAsArray(gvizUrl(ASESMENT_BUSHING, query));
+      if (offset > 0) return Response.json({ ok: true, hasMore: false, nextOffset: offset, rowCount: 0 });
+      const url = `https://docs.google.com/spreadsheets/d/${ASESMENT_BUSHING.id}/export?format=csv&gid=${ASESMENT_BUSHING.gid}`;
+      const bushingRaw = await fetchSheetRowsAsArray(url);
       const bushing = mapAsesmentBushing(bushingRaw);
       if (bushing.length > 0) {
         await sql.begin(async (tx) => {
@@ -390,7 +367,7 @@ export async function POST(req: Request) {
           }
         });
       }
-      return Response.json({ ok: true, hasMore: bushingRaw.length >= limit, nextOffset: offset + limit, rowCount: bushing.length });
+      return Response.json({ ok: true, hasMore: false, nextOffset: offset, rowCount: bushing.length });
     } else if (sheet === "mtu") {
       if (offset > 0) return Response.json({ ok: true, hasMore: false, nextOffset: offset, rowCount: 0 });
       // Gunakan /export?format=csv agar mengabaikan filter UI yang sedang aktif di Spreadsheet

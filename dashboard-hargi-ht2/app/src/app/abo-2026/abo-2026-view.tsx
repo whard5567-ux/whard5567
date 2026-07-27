@@ -12,7 +12,8 @@ import { ChartCard } from "@/components/chart-card";
 import { EChart, useChartTheme } from "@/components/echart";
 import { pieOption, rankedBarOption, simpleBarOption, stackedBarOption } from "@/lib/echart-options";
 import { BigStat, Caption, pctColor } from "@/components/hero-primitives";
-import { ZoomIn, ZoomOut, Maximize, Presentation } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize, Presentation, Image as ImageIcon } from "lucide-react";
+import { toJpeg } from "html-to-image";
 import { Deck, DeckCover, DeckChartSlide, DeckContentSlide } from "@/components/slide-deck";
 
 const EMPTY: AboFilters = { upt: [], status: [], jenis_anomali: [], status_fix: [] };
@@ -27,6 +28,7 @@ export function Abo2026View({
   const t = useChartTheme();
   const [sel, setSel] = useState<AboFilters>(EMPTY);
   const [zoom, setZoom] = useState(1);
+  const [isExportingJpg, setIsExportingJpg] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -161,9 +163,36 @@ export function Abo2026View({
           >
             <Presentation className="h-4 w-4" /> Slide Deck
           </button>
+          <button
+            disabled={isExportingJpg}
+            onClick={async () => {
+              setIsExportingJpg(true);
+              try {
+                const element = document.getElementById("dashboard-capture");
+                if (element) {
+                  const dataUrl = await toJpeg(element, { quality: 0.9, backgroundColor: "#0f172a" });
+                  const link = document.createElement("a");
+                  link.download = `Dashboard_ABO_2026.jpg`;
+                  link.href = dataUrl;
+                  link.click();
+                }
+              } catch (err) {
+                console.error("Failed to export JPG", err);
+                alert("Gagal mengunduh gambar JPG.");
+              } finally {
+                setIsExportingJpg(false);
+              }
+            }}
+            className="flex items-center gap-2 rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-teal-700 transition-colors disabled:opacity-50"
+            title="Download laporan JPG"
+          >
+            <ImageIcon className="h-4 w-4" />
+            {isExportingJpg ? "Memproses..." : "Download JPG"}
+          </button>
         </div>
       </div>
 
+      <div id="dashboard-capture" className="pb-2 pt-1">
       {/* Scalable Content */}
       <div style={{ transform: `scale(${zoom})`, transformOrigin: "top center", transition: "transform 0.2s ease-out" }} className="space-y-6">
         
@@ -302,6 +331,7 @@ export function Abo2026View({
             </table>
           </div>
         </section>
+      </div>
 
       {presenting && (
         <Deck

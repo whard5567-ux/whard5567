@@ -28,18 +28,19 @@ export function pieOption(t: ChartTheme, slices: Slice[]): EChartsOption {
   return {
     tooltip: { trigger: "item", ...tooltipPreset(t) },
     legend: {
-      bottom: 0,
-      type: "scroll",
-      itemWidth: 10,
-      itemHeight: 10,
-      textStyle: { color: t.tick, fontSize: 12 },
+      orient: "vertical",
+      right: "0%",
+      bottom: "0%",
+      itemWidth: 8,
+      itemHeight: 8,
+      textStyle: { color: t.tick, fontSize: 10 },
       pageTextStyle: { color: t.tick },
     },
     series: [
       {
         type: "pie",
-        radius: ["35%", "50%"],
-        center: ["50%", "45%"],
+        radius: ["35%", "55%"],
+        center: ["40%", "45%"],
         // irisan sekecil apapun dijamin kebagian busur minimal 7° biar KELIHATAN
         minAngle: 7,
         data: slices.map((s) => ({
@@ -101,14 +102,15 @@ export function stackedBarOption(
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, formatter: axisTooltipNoZero, ...tooltipPreset(t) },
     legend: {
       data: series.map(s => s.name),
-      [legendTop ? "top" : "bottom"]: 0,
-      type: "scroll",
-      itemWidth: 10,
-      itemHeight: 10,
-      textStyle: { color: t.tick, fontSize: 12 },
-      pageTextStyle: { color: t.tick },
+      orient: "vertical",
+      right: "0%",
+      top: "middle",
+      itemWidth: 8,
+      itemHeight: 8,
+      textStyle: { color: t.tick, fontSize: 10 },
+      pageTextStyle: { color: t.tick, fontSize: 10 },
     },
-    grid: { left: 8, right: totals && horizontal ? 44 : 16, top: legendTop ? 34 : 12, bottom: legendTop ? 8 : 34, containLabel: true },
+    grid: { left: 8, right: totals && horizontal ? 110 : 95, top: 12, bottom: 8, containLabel: true },
     xAxis: horizontal ? valueAxis : catAxis,
     yAxis: horizontal ? { ...catAxis, inverse: true } : valueAxis,
     series: [
@@ -196,7 +198,6 @@ export function lineOption(t: ChartTheme, xLabels: string[], series: LineSeries[
     tooltip: { trigger: "axis", ...tooltipPreset(t) },
     legend: {
       top: 0,
-      type: "scroll",
       itemWidth: 12,
       itemHeight: 8,
       textStyle: { color: t.tick, fontSize: 12 },
@@ -390,14 +391,15 @@ export function groupedBarOption(
   return {
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, formatter: axisTooltipNoZero, ...tooltipPreset(t) },
     legend: {
-      top: 0,
-      type: "scroll",
-      itemWidth: 10,
-      itemHeight: 10,
-      textStyle: { color: t.tick, fontSize: 11 },
-      pageTextStyle: { color: t.tick },
+      orient: "vertical",
+      right: "0%",
+      top: "middle",
+      itemWidth: 16,
+      itemHeight: 8,
+      textStyle: { color: t.tick, fontSize: 10 },
+      pageTextStyle: { color: t.tick, fontSize: 10 },
     },
-    grid: { left: 8, right: horizontal ? 28 : 16, top: 34, bottom: 8, containLabel: true },
+    grid: { left: 8, right: horizontal ? 110 : 95, top: 12, bottom: 8, containLabel: true },
     xAxis: horizontal ? valAxis : catAxis,
     yAxis: horizontal ? { ...catAxis, inverse: true } : valAxis,
     series: series.map((s) => ({

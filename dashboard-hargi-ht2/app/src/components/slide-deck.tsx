@@ -22,14 +22,16 @@ export function DeckB({ children }: { children: ReactNode }) {
 export function Deck({ 
   slides, 
   onExit,
-  filters
+  filters,
+  initialSlide = 0
 }: { 
   slides: DeckSlide[]; 
   onExit: () => void;
   filters?: ReactNode;
+  initialSlide?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [slide, setSlide] = useState(0);
+  const [slide, setSlide] = useState(initialSlide);
   const TOTAL = slides.length;
 
   const go = useCallback(

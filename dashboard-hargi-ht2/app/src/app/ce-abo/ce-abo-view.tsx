@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Presentation } from "lucide-react";
+import { Presentation, Image as ImageIcon } from "lucide-react";
+import { toJpeg } from "html-to-image";
 import {
   ceAggregate, ceAvailableFilters, ceFilterRows,
   type CeFilters, type CeRow,
@@ -20,6 +21,7 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
   const t = useChartTheme();
   const [sel, setSel] = useState<CeFilters>(EMPTY);
   const [showDeck, setShowDeck] = useState(false);
+  const [isExportingJpg, setIsExportingJpg] = useState(false);
 
   // Pisahkan temuan aktif dari populasi penuh
   const findings = useMemo(() => 
@@ -260,9 +262,36 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
 
         <div className="ml-auto flex items-center gap-3">
           <span className="num rounded-full bg-surface-3 px-3 py-1 text-xs font-semibold text-ink-3">{filtered.length} / {rows.length} temuan</span>
+          <button
+            disabled={isExportingJpg}
+            onClick={async () => {
+              setIsExportingJpg(true);
+              try {
+                const element = document.getElementById("dashboard-capture");
+                if (element) {
+                  const dataUrl = await toJpeg(element, { quality: 0.9, backgroundColor: "#0f172a" });
+                  const link = document.createElement("a");
+                  link.download = `Dashboard_CE_ABO.jpg`;
+                  link.href = dataUrl;
+                  link.click();
+                }
+              } catch (err) {
+                console.error("Failed to export JPG", err);
+                alert("Gagal mengunduh gambar JPG.");
+              } finally {
+                setIsExportingJpg(false);
+              }
+            }}
+            className="flex items-center gap-2 rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-teal-700 transition-colors disabled:opacity-50"
+            title="Download laporan JPG"
+          >
+            <ImageIcon className="h-4 w-4" />
+            {isExportingJpg ? "Memproses..." : "Download JPG"}
+          </button>
         </div>
       </div>
 
+      <div id="dashboard-capture" className="space-y-4 pb-2 pt-1">
       {/* Hero CE — total + panel per Level Anomali (klik = filter) */}
       <div className="rise rise-2">
         <HeroCE
@@ -438,6 +467,7 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
             option={toGrouped(fullAgg.switchYardUraian)}
           />
         </ChartCard>
+      </div>
       </div>
 
       {/* Tabel rincian */}

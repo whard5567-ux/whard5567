@@ -8,7 +8,8 @@ import { pieOption, hbarOption, simpleBarOption, groupedBarOption, stackedBarOpt
 import { PALETTE } from "@/lib/colors";
 import { EChart, useChartTheme } from "@/components/echart";
 import { TableMtu } from "./table-mtu"; // We will create this or use a generic table
-import { FileText, Factory, MapPin, Zap, Search } from "lucide-react";
+import { toJpeg } from "html-to-image";
+import { FileText, Factory, MapPin, Zap, Search, Image as ImageIcon } from "lucide-react";
 
 export function MtuView({ rows }: { rows: MtuRow[] }) {
   const t = useChartTheme();
@@ -18,6 +19,7 @@ export function MtuView({ rows }: { rows: MtuRow[] }) {
   const [pabrikan, setPabrikan] = useState<string[]>([]);
   const [progresSaatIni, setProgresSaatIni] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [isExportingJpg, setIsExportingJpg] = useState(false);
 
   const available = useMemo(() => mtuAvailableFilters(rows), [rows]);
   const filtered = useMemo(
@@ -234,8 +236,38 @@ export function MtuView({ rows }: { rows: MtuRow[] }) {
             className="w-full rounded-xl border border-edge/50 bg-surface-2/50 py-1.5 pl-9 pr-4 text-[13px] text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-all"
           />
         </div>
+        <div className="ml-auto flex items-center gap-3">
+          <span className="num text-xs text-ink-3">Total <b className="text-ink">{filtered.length}</b> data</span>
+          <button
+            disabled={isExportingJpg}
+            onClick={async () => {
+              setIsExportingJpg(true);
+              try {
+                const element = document.getElementById("dashboard-capture");
+                if (element) {
+                  const dataUrl = await toJpeg(element, { quality: 0.9, backgroundColor: "#0f172a" });
+                  const link = document.createElement("a");
+                  link.download = `Dashboard_Penggantian_MTU.jpg`;
+                  link.href = dataUrl;
+                  link.click();
+                }
+              } catch (err) {
+                console.error("Failed to export JPG", err);
+                alert("Gagal mengunduh gambar JPG.");
+              } finally {
+                setIsExportingJpg(false);
+              }
+            }}
+            className="flex items-center gap-2 rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-teal-700 transition-colors disabled:opacity-50"
+            title="Download laporan JPG"
+          >
+            <ImageIcon className="h-4 w-4" />
+            {isExportingJpg ? "Memproses..." : "Download JPG"}
+          </button>
+        </div>
       </div>
 
+      <div id="dashboard-capture" className="space-y-6 pb-2 pt-1">
       <div className="flex flex-col md:flex-row gap-4 md:gap-8">
         <div className="flex-1 rounded-2xl bg-surface border border-edge/50 p-5 flex flex-col gap-1 relative">
           <div className="text-sm text-ink-3 font-medium uppercase tracking-wider">Total Kontrak MTU</div>
@@ -439,6 +471,7 @@ export function MtuView({ rows }: { rows: MtuRow[] }) {
             />
           </div>
         </ChartCard>
+      </div>
       </div>
 
       {/* TABLE */}

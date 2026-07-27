@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Search, Info, CheckCircle2, AlertTriangle, AlertCircle, FileSpreadsheet, LayoutGrid, Presentation, Database } from "lucide-react";
+import { Search, Info, CheckCircle2, AlertTriangle, AlertCircle, FileSpreadsheet, LayoutGrid, Presentation, Database, Image as ImageIcon } from "lucide-react";
+import { toJpeg } from "html-to-image";
 import { conditionColor } from "@/lib/colors";
 import { pieOption, hbarOption, groupedBarOption } from "@/lib/echart-options";
 import { ChartCard } from "@/components/chart-card";
@@ -108,6 +109,7 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
   const [centerTapFilter, setCenterTapFilter] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showDeck, setShowDeck] = useState(false);
+  const [isExportingJpg, setIsExportingJpg] = useState(false);
   
   // Tab State
   const [activeTab, setActiveTab] = useState<"overview" | "data">("overview");
@@ -758,11 +760,38 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
               >
                 <Presentation className="h-4 w-4" /> Slide Deck
               </button>
+              <button
+                disabled={isExportingJpg}
+                onClick={async () => {
+                  setIsExportingJpg(true);
+                  try {
+                    const element = document.getElementById("dashboard-capture");
+                    if (element) {
+                      const dataUrl = await toJpeg(element, { quality: 0.9, backgroundColor: "#0f172a" });
+                      const link = document.createElement("a");
+                      link.download = `Dashboard_Asesment_Bushing.jpg`;
+                      link.href = dataUrl;
+                      link.click();
+                    }
+                  } catch (err) {
+                    console.error("Failed to export JPG", err);
+                    alert("Gagal mengunduh gambar JPG.");
+                  } finally {
+                    setIsExportingJpg(false);
+                  }
+                }}
+                className="flex h-9 items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 text-xs font-medium text-white hover:bg-teal-700 transition-colors border border-teal-700 disabled:opacity-50"
+                title="Download laporan JPG"
+              >
+                <ImageIcon className="h-4 w-4" />
+                {isExportingJpg ? "Memproses..." : "Download JPG"}
+              </button>
             </div>
           </div>
         </div>
       </div>
 
+      <div id="dashboard-capture" className="space-y-6 pb-2 pt-1">
       {/* 2. KPI STRIP (5 Cards) */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         {/* Card 1: Total Asesment */}
@@ -1101,6 +1130,7 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }

@@ -2,7 +2,8 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Presentation } from "lucide-react";
+import { Presentation, Download, Image as ImageIcon } from "lucide-react";
+import { toJpeg } from "html-to-image";
 import {
   ggnAggregate, ggnAvailableFilters, ggnFilterRows, monthIndex, sortMonths,
   type GgnFilters, type GgnRow,
@@ -15,6 +16,7 @@ import { MultiSelect } from "@/components/multi-select";
 import { ChartCard } from "@/components/chart-card";
 import { EChart, useChartTheme } from "@/components/echart";
 import { Deck, DeckCover, DeckChartSlide, DeckContentSlide, DeckB, deckPct } from "@/components/slide-deck";
+import { exportDashboardToPPT } from "@/lib/export-ppt";
 
 const EMPTY: GgnFilters = { bulan: [], tahun: [], unit: [], kategori: [] };
 const YEAR_COLORS = ["#fbbf24", "#38bdf8", "#f87171", "#4ade80", "#c084fc", "#fb923c", "#2dd4bf"];
@@ -23,6 +25,14 @@ export function ParetoView({ rows }: { rows: GgnRow[] }) {
   const t = useChartTheme();
   const [sel, setSel] = useState<GgnFilters>(EMPTY);
   const [showDeck, setShowDeck] = useState(false);
+  const [initialSlide, setInitialSlide] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isExportingJpg, setIsExportingJpg] = useState(false);
+
+  const openDeck = useCallback((idx: number) => {
+    setInitialSlide(idx);
+    setShowDeck(true);
+  }, []);
 
   const available = useMemo(() => ggnAvailableFilters(rows), [rows]);
   const filtered = useMemo(() => ggnFilterRows(rows, sel), [rows, sel]);
@@ -230,9 +240,9 @@ export function ParetoView({ rows }: { rows: GgnRow[] }) {
       node: (
         <DeckChartSlide
           no={5} total={8} eyebrow="Analisis Sebab"
-          title="Pareto Kategori Penyebab"
+          title="Kategori Penyebab Gangguan"
           chartKey="c-cat"
-          option={catParetoOpt}
+          option={pieOpt}
           notes={[
             <><DeckB>{agg.byKategori[0]?.[0] || "—"}</DeckB> merupakan penyebab utama dengan <DeckB>{deckPct(agg.byKategori[0]?.[1] || 0, agg.total)}</DeckB> dari total gangguan.</>
           ]}
@@ -245,9 +255,9 @@ export function ParetoView({ rows }: { rows: GgnRow[] }) {
       node: (
         <DeckChartSlide
           no={6} total={8} eyebrow="Analisis Lokasi"
-          title="Pareto Gangguan per Unit"
+          title="Gangguan per Unit"
           chartKey="c-unit"
-          option={unitParetoOpt}
+          option={unitOpt}
           notes={[
             <>Unit dengan gangguan terbanyak adalah <DeckB>{unitLabels[0] || "—"}</DeckB> (<DeckB>{unitTotals[0] || 0}</DeckB> kejadian).</>
           ]}
@@ -280,9 +290,11 @@ export function ParetoView({ rows }: { rows: GgnRow[] }) {
     },
   ], [agg, curYear, curMonth, totalYear, totalMonth, t, colorOf, allMonths, unitLabels, unitTotals, catParetoOpt, unitParetoOpt, trendOpt, yoyOpt]);
 
+
+
   return (
     <div className="space-y-4">
-      {/* {showDeck && <Deck slides={slides} onExit={() => setShowDeck(false)} />} */}
+      {showDeck && <Deck slides={slides} initialSlide={initialSlide} onExit={() => setShowDeck(false)} />}
 
       {/* Filter bar */}
       <div className="rise rise-1 relative z-40 flex flex-wrap items-center gap-2">
@@ -290,28 +302,91 @@ export function ParetoView({ rows }: { rows: GgnRow[] }) {
         <MultiSelect label="Bulan" options={available.bulan} selected={sel.bulan} onChange={set("bulan")} />
         <MultiSelect label="Tahun" options={available.tahun} selected={sel.tahun} onChange={set("tahun")} />
         <MultiSelect label="Kategori" options={available.kategori} selected={sel.kategori} onChange={set("kategori")} />
-        
-        {/*
-        <button
-          onClick={() => setShowDeck(true)}
-          className="ml-2 flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-1.5 text-[13px] font-medium text-ink-2 hover:bg-surface-3 hover:text-ink transition-colors"
-        >
-          <Presentation className="h-4 w-4" /> Slide Deck
-        </button>
-        */}
+
 
 
         <div className="ml-auto flex items-center gap-3">
           <span className="num text-xs text-ink-3">Total <b className="text-ink">{agg.total}</b> gangguan</span>
+          <button
+            disabled={isExporting}
+            onClick={async () => {
+              setIsExporting(true);
+              try {
+                await exportDashboardToPPT({
+                  curMonth,
+                  curYear,
+                  totalGangguan: agg.total,
+                  byKategori: agg.byKategori,
+                  unitLabels,
+                  unitTotals,
+                  unitKategoriData: kategoris.map(cat => ({
+                    name: cat,
+                    data: unitLabels.map(u => agg.byUnitKategori.get(u)?.get(cat) ?? 0)
+                  })),
+                  months: allMonths.map(m => m.slice(0, 3)),
+                  trendBulanTahun: years.map(y => ({
+                    name: `Tahun ${y}`,
+                    data: allMonths.map(m => agg.byTahunBulan.get(y)?.get(m) ?? 0)
+                  })),
+                  yoyYears: years,
+                  yoySeries: yoySeries.map(s => ({ name: s.name, data: s.data as number[] }))
+                });
+              } catch (err) {
+                console.error("Failed to export PPT", err);
+                alert("Gagal mengunduh presentasi.");
+              } finally {
+                setIsExporting(false);
+              }
+            }}
+            className="flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
+            title="Download laporan PPT"
+          >
+            <Download className="h-4 w-4" />
+            {isExporting ? "Mengekspor..." : "Download PPT"}
+          </button>
+          <button
+            disabled={isExportingJpg}
+            onClick={async () => {
+              setIsExportingJpg(true);
+              try {
+                const element = document.getElementById("dashboard-capture");
+                if (element) {
+                  const dataUrl = await toJpeg(element, { quality: 0.9, backgroundColor: "#0f172a" });
+                  const link = document.createElement("a");
+                  link.download = `Dashboard_Gangguan_Trafo_${curMonth}_${curYear}.jpg`;
+                  link.href = dataUrl;
+                  link.click();
+                }
+              } catch (err) {
+                console.error("Failed to export JPG", err);
+                alert("Gagal mengunduh gambar JPG.");
+              } finally {
+                setIsExportingJpg(false);
+              }
+            }}
+            className="flex items-center gap-2 rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-teal-700 transition-colors disabled:opacity-50"
+            title="Download laporan JPG"
+          >
+            <ImageIcon className="h-4 w-4" />
+            {isExportingJpg ? "Memproses..." : "Download JPG"}
+          </button>
         </div>
       </div>
 
       {/* Charts dashboard */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
-        <ChartCard title="Kategori Penyebab Gangguan" badge={`${agg.total}`} className="rise rise-2 h-96 lg:col-span-2">
+      <div id="dashboard-capture" className="space-y-3 pb-2 pt-1">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
+        <ChartCard 
+          title="Kategori Penyebab Gangguan" 
+          badge={`${agg.total}`} 
+          className="rise rise-2 h-96 lg:col-span-2"
+        >
           <EChart key={`p-${t.key}`} option={pieOpt} />
         </ChartCard>
-        <ChartCard title="Gangguan per Unit" className="rise rise-3 h-96 lg:col-span-3">
+        <ChartCard 
+          title="Gangguan per Unit" 
+          className="rise rise-3 h-96 lg:col-span-3"
+        >
           <EChart key={`u-${t.key}`} option={unitOpt} />
         </ChartCard>
       </div>
@@ -323,12 +398,19 @@ export function ParetoView({ rows }: { rows: GgnRow[] }) {
       </div>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <ChartCard title="Trend Gangguan Bulanan" className="rise rise-5 h-96">
+        <ChartCard 
+          title="Trend Gangguan Bulanan" 
+          className="rise rise-5 h-96"
+        >
           <EChart key={`tr-${t.key}`} option={trendOpt} />
         </ChartCard>
-        <ChartCard title="Trend Gangguan Year-on-Year" className="rise rise-6 h-96">
+        <ChartCard 
+          title="Trend Gangguan Year-on-Year" 
+          className="rise rise-6 h-96"
+        >
           <EChart key={`yoy-${t.key}`} option={yoyOpt} />
         </ChartCard>
+      </div>
       </div>
 
       {/* Tabel rincian */}

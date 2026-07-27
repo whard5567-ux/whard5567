@@ -25,30 +25,37 @@ export function Sidebar() {
   return (
     <aside 
       className={`sticky top-0 z-30 flex h-auto shrink-0 flex-row items-center gap-1 border-b border-edge bg-surface px-3 py-2 backdrop-blur-xl transition-all duration-300 md:h-screen md:flex-col md:items-stretch md:gap-0 md:border-b-0 md:border-r ${
-        isOpen ? "w-full md:w-60 md:px-4 md:py-6" : "w-full md:w-16 md:px-2 md:py-6"
+        isOpen ? "w-full md:w-72 md:px-4 md:py-6" : "w-full md:w-16 md:px-2 md:py-6"
       }`}
     >
-      <div className={`flex items-center md:mb-8 ${isOpen ? "justify-between" : "justify-center"}`}>
-        <Link href="/" className={`flex items-center gap-2.5 ${isOpen ? "md:px-2" : ""}`}>
-          <Image src="/logo.jpg" alt="Logo" width={128} height={128} quality={100} className="h-8 w-8 shrink-0 object-cover rounded-full" />
+      <div className={`relative flex items-center md:mb-8 md:w-full ${isOpen ? "justify-between md:flex-col md:justify-center md:gap-4" : "justify-center md:flex-col md:gap-4"}`}>
+        <Link href="/" className={`flex items-center gap-3 ${isOpen ? "md:flex-col md:gap-4 md:text-center" : ""}`}>
+          <Image 
+            src="/logo.jpg" 
+            alt="Logo" 
+            width={128} 
+            height={128} 
+            quality={100} 
+            className={`shrink-0 object-cover rounded-full shadow-md transition-all duration-300 h-11 w-11 ${isOpen ? "md:h-24 md:w-24" : "md:h-10 md:w-10"}`} 
+          />
           {isOpen && (
             <div className="leading-tight hidden md:block">
-              <div className="text-sm font-bold tracking-wide">Hartrans 2</div>
-              <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-ink-3">
+              <div className="text-2xl font-extrabold tracking-wide text-ink">Hartrans 2</div>
+              <div className="text-xs font-bold uppercase tracking-[0.2em] text-ink-3 mt-1.5">
                 Gardu Induk
               </div>
             </div>
           )}
           {/* Mobile title always shows */}
           <div className="leading-tight md:hidden">
-            <div className="text-sm font-bold tracking-wide">Hartrans 2</div>
+            <div className="text-lg font-bold tracking-wide text-ink">Hartrans 2</div>
           </div>
         </Link>
         
         {/* Toggle Button (Desktop Only) */}
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className="hidden md:flex items-center justify-center h-6 w-6 rounded-md hover:bg-surface-2 text-ink-3 hover:text-ink transition-colors"
+          className={`hidden md:flex items-center justify-center h-6 w-6 rounded-md hover:bg-surface-2 text-ink-3 hover:text-ink transition-colors ${isOpen ? "absolute right-0 top-0" : ""}`}
           title={isOpen ? "Tutup Menu" : "Buka Menu"}
         >
           {isOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -73,7 +80,7 @@ export function Sidebar() {
             >
               <Icon className="h-4 w-4 shrink-0" />
               {/* Desktop label (hidden if closed), Mobile label (always shows) */}
-              <span className={`whitespace-nowrap ${!isOpen ? "hidden md:hidden" : "block"}`}>
+              <span className={`truncate text-[13px] font-medium ${!isOpen ? "hidden md:hidden" : "block"}`}>
                 {label}
               </span>
               {active && isOpen && <span className="ml-auto hidden h-1.5 w-1.5 rounded-full bg-accent md:block" />}

@@ -29,7 +29,7 @@ function colLetter(i: number): string {
 }
 
 async function fetchCsv(url: string): Promise<Row[]> {
-  const res = await fetch(url, { redirect: "follow" });
+  const res = await fetch(url, { redirect: "follow", cache: "no-store" });
   if (!res.ok) throw new Error(`Gagal fetch sheet: HTTP ${res.status}`);
   const text = await res.text();
   const parsed = Papa.parse<Row>(text, { header: true, skipEmptyLines: true });
@@ -83,8 +83,8 @@ function mapCeAbo(rows: Row[]) {
   return rows
     .filter((r) => {
       const sub = clean(r[col.sub_bidang]).toUpperCase();
-      const ht = hartrans ? clean(r[hartrans]).toUpperCase() : "";
-      return sub === "HARGI" && (!hartrans || ht === "HARTRANS 2");
+      const uptVal = clean(r[col.upt]).toUpperCase();
+      return sub === "HARGI" && uptVal !== "N/A" && uptVal !== "#N/A";
     })
     .map((r) => ({
       kode: clean(r[col.kode]),
@@ -335,9 +335,6 @@ export async function POST(req: Request) {
       
       const ht = optLetterOf("hartrans");
       let whereCondition = `upper(${sb}) = 'HARGI'`;
-      if (ht) {
-        whereCondition += ` and upper(${ht}) = 'HARTRANS 2'`;
-      }
       
       const query = `select * where ${whereCondition} limit ${limit} offset ${offset}`;
       const ceRaw = await fetchCsv(gvizUrl(CE_ABO, query));
@@ -368,8 +365,10 @@ export async function POST(req: Request) {
       return Response.json({ ok: true, hasMore: ggnRaw.length >= limit, nextOffset: offset + limit, rowCount: ggn.length });
 
     } else if (sheet === "abo") {
-      const query = `select * limit ${limit} offset ${offset}`;
-      const aboRaw = await fetchCsv(gvizUrl(ABO_2026, query));
+      if (offset > 0) return Response.json({ ok: true, hasMore: false, nextOffset: offset, rowCount: 0 });
+      // Gunakan /export?format=csv agar mengabaikan filter UI yang sedang aktif di Spreadsheet
+      const url = `https://docs.google.com/spreadsheets/d/${ABO_2026.id}/export?format=csv&gid=${ABO_2026.gid}`;
+      const aboRaw = await fetchCsv(url);
       const abo = mapAbo2026(aboRaw);
       if (abo.length > 0) {
         await sql.begin(async (tx) => {

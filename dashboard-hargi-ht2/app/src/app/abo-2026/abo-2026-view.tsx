@@ -194,72 +194,68 @@ export function Abo2026View({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Left Column (1/3) */}
-          <div className="lg:col-span-1 flex flex-col gap-4">
-            <ChartCard title="Progres per Unit (UPT)" className="rise rise-3 flex-1 h-[28rem]">
-              <div className="p-2 space-y-4 max-h-full overflow-auto scrollbar-thin">
-              {uptProgress.map((u) => {
-                const anomalies = agg.byUptAnomali.get(u.name);
-                const anomalyList = anomalies ? [...anomalies.entries()].sort((a, b) => b[1] - a[1]) : [];
-                
-                return (
-                <div key={u.name} className="space-y-2 border-b border-edge/30 pb-3 last:border-0 last:pb-0">
-                  <div className="flex justify-between text-[11px] font-medium px-1">
-                    <span className="text-ink truncate max-w-[140px]" title={u.name}>{u.name}</span>
-                    <div className="flex items-center gap-3">
-                      <span className="num text-emerald-500">{u.close}<small className="ml-0.5 opacity-60 font-normal">C</small></span>
-                      <span className="num text-red-400">{u.open}<small className="ml-0.5 opacity-60 font-normal">O</small></span>
-                      <span className="bg-edge w-px h-2.5 mx-1" />
-                      <span className="num text-ink font-bold">{u.pct.toFixed(1)}%</span>
-                    </div>
+        <ChartCard title="Progres per Unit (UPT)" className="rise rise-3">
+          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-h-[32rem] overflow-auto scrollbar-thin">
+            {uptProgress.map((u) => {
+              const anomalies = agg.byUptAnomali.get(u.name);
+              const anomalyList = anomalies ? [...anomalies.entries()].sort((a, b) => b[1] - a[1]) : [];
+              
+              return (
+              <div key={u.name} className="space-y-2 border border-edge/40 bg-surface-1 rounded-xl p-4 shadow-sm hover:border-edge transition-colors">
+                <div className="flex justify-between text-[11px] font-medium px-1">
+                  <span className="text-ink truncate max-w-[140px]" title={u.name}>{u.name}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="num text-emerald-500">{u.close}<small className="ml-0.5 opacity-60 font-normal">C</small></span>
+                    <span className="num text-red-400">{u.open}<small className="ml-0.5 opacity-60 font-normal">O</small></span>
+                    <span className="bg-edge w-px h-2.5 mx-1" />
+                    <span className="num text-ink font-bold">{u.pct.toFixed(1)}%</span>
                   </div>
-                  <div className="h-2 bg-surface-2 rounded-full overflow-hidden flex">
-                    <div className="h-full bg-emerald-500" style={{ width: `${u.pct}%` }} />
-                    {u.total > 0 && <div className="h-full bg-red-400" style={{ width: `${100 - u.pct}%` }} />}
-                  </div>
-                  {anomalyList.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-1 px-1">
-                      {anomalyList.map(([ano, count]) => {
-                        const statuses = agg.byUptAnomaliStatus?.get(u.name)?.get(ano);
-                        let c = 0, o = 0;
-                        if (statuses) {
-                          for (const [st, num] of statuses.entries()) {
-                            if (st.toUpperCase() === "CLOSE") c += num;
-                            else o += num;
-                          }
-                        }
-                        
-                        return (
-                          <div key={ano} className="flex items-stretch text-[9px] rounded bg-surface-2 border border-edge/50 overflow-hidden">
-                            <span className="px-1.5 py-0.5 text-ink-3 flex items-center" title={ano}>
-                              {ano}
-                            </span>
-                            <span className="flex items-center px-1.5 py-0.5 bg-surface-solid border-l border-edge/50 shrink-0">
-                              <span className="text-emerald-500 font-bold" title="Close">{c}</span>
-                              <span className="text-ink-3 mx-0.5">/</span>
-                              <span className="text-red-400 font-bold" title="Open">{o}</span>
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
-              )})}
-            </div>
-            </ChartCard>
-            <ChartCard title="Priority Status" className="rise rise-4 h-60 shrink-0">
-              <EChart key="status-chart" option={statusOpt} />
-            </ChartCard>
+                <div className="h-2 bg-surface-2 rounded-full overflow-hidden flex">
+                  <div className="h-full bg-emerald-500" style={{ width: `${u.pct}%` }} />
+                  {u.total > 0 && <div className="h-full bg-red-400" style={{ width: `${100 - u.pct}%` }} />}
+                </div>
+                {anomalyList.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2 px-1">
+                    {anomalyList.map(([ano, count]) => {
+                      const statuses = agg.byUptAnomaliStatus?.get(u.name)?.get(ano);
+                      let c = 0, o = 0;
+                      if (statuses) {
+                        for (const [st, num] of statuses.entries()) {
+                          if (st.toUpperCase() === "CLOSE") c += num;
+                          else o += num;
+                        }
+                      }
+                      
+                      return (
+                        <div key={ano} className="flex items-stretch text-[9px] rounded bg-surface-2 border border-edge/50 overflow-hidden">
+                          <span className="px-1.5 py-0.5 text-ink-3 flex items-center" title={ano}>
+                            {ano}
+                          </span>
+                          <span className="flex items-center px-1.5 py-0.5 bg-surface-solid border-l border-edge/50 shrink-0">
+                            <span className="text-emerald-500 font-bold" title="Close">{c}</span>
+                            <span className="text-ink-3 mx-0.5">/</span>
+                            <span className="text-red-400 font-bold" title="Open">{o}</span>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )})}
           </div>
+        </ChartCard>
 
-          {/* Charts (Right - 2/3) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <ChartCard title="Priority Status" className="rise rise-4 lg:col-span-1 h-[26rem]">
+            <EChart key="status-chart" option={statusOpt} />
+          </ChartCard>
           <div className="lg:col-span-2 flex flex-col gap-4">
-            <ChartCard title="Distribusi Jenis Anomali ABO" className="rise rise-5 flex-1 min-h-80">
+            <ChartCard title="Distribusi Jenis Anomali ABO" className="rise rise-5 flex-1 min-h-[16rem]">
               <EChart key="anomali-chart" option={anomaliOpt} />
             </ChartCard>
-            <ChartCard title="Status AHI Pada Aset Critical Subsistem" className="rise rise-6 h-80">
+            <ChartCard title="Status AHI Pada Aset Critical Subsistem" className="rise rise-6 flex-1 min-h-[16rem]">
               <EChart key="ahi-critical-chart" option={ahiOpt} />
             </ChartCard>
           </div>
@@ -333,72 +329,68 @@ export function Abo2026View({
                     { label: "Progres Akumulatif", value: `${agg.stats.progress.toFixed(1)}%` },
                   ]}
                 >
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    {/* Left Column (1/3) */}
-                    <div className="lg:col-span-1 flex flex-col gap-4">
-                      <ChartCard title="Progres per Unit (UPT)" className="flex-1 h-[28rem]">
-                        <div className="p-2 space-y-4 max-h-full overflow-auto scrollbar-thin">
-                        {uptProgress.map((u) => {
-                          const anomalies = agg.byUptAnomali.get(u.name);
-                          const anomalyList = anomalies ? [...anomalies.entries()].sort((a, b) => b[1] - a[1]) : [];
-                          
-                          return (
-                          <div key={u.name} className="space-y-2 border-b border-edge/30 pb-3 last:border-0 last:pb-0">
-                            <div className="flex justify-between text-[11px] font-medium px-1">
-                              <span className="text-ink truncate max-w-[140px]" title={u.name}>{u.name}</span>
-                              <div className="flex items-center gap-3">
-                                <span className="num text-emerald-500">{u.close}<small className="ml-0.5 opacity-60 font-normal">C</small></span>
-                                <span className="num text-red-400">{u.open}<small className="ml-0.5 opacity-60 font-normal">O</small></span>
-                                <span className="bg-edge w-px h-2.5 mx-1" />
-                                <span className="num text-ink font-bold">{u.pct.toFixed(1)}%</span>
-                              </div>
+                  <ChartCard title="Progres per Unit (UPT)">
+                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-h-[32rem] overflow-auto scrollbar-thin">
+                      {uptProgress.map((u) => {
+                        const anomalies = agg.byUptAnomali.get(u.name);
+                        const anomalyList = anomalies ? [...anomalies.entries()].sort((a, b) => b[1] - a[1]) : [];
+                        
+                        return (
+                        <div key={u.name} className="space-y-2 border border-edge/40 bg-surface-1 rounded-xl p-4 shadow-sm">
+                          <div className="flex justify-between text-[11px] font-medium px-1">
+                            <span className="text-ink truncate max-w-[140px]" title={u.name}>{u.name}</span>
+                            <div className="flex items-center gap-3">
+                              <span className="num text-emerald-500">{u.close}<small className="ml-0.5 opacity-60 font-normal">C</small></span>
+                              <span className="num text-red-400">{u.open}<small className="ml-0.5 opacity-60 font-normal">O</small></span>
+                              <span className="bg-edge w-px h-2.5 mx-1" />
+                              <span className="num text-ink font-bold">{u.pct.toFixed(1)}%</span>
                             </div>
-                            <div className="h-2 bg-surface-2 rounded-full overflow-hidden flex">
-                              <div className="h-full bg-emerald-500" style={{ width: `${u.pct}%` }} />
-                              {u.total > 0 && <div className="h-full bg-red-400" style={{ width: `${100 - u.pct}%` }} />}
-                            </div>
-                            {anomalyList.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5 mt-1 px-1">
-                                {anomalyList.map(([ano, count]) => {
-                                  const statuses = agg.byUptAnomaliStatus?.get(u.name)?.get(ano);
-                                  let c = 0, o = 0;
-                                  if (statuses) {
-                                    for (const [st, num] of statuses.entries()) {
-                                      if (st.toUpperCase() === "CLOSE") c += num;
-                                      else o += num;
-                                    }
-                                  }
-                                  
-                                  return (
-                                    <div key={ano} className="flex items-stretch text-[9px] rounded bg-surface-2 border border-edge/50 overflow-hidden">
-                                      <span className="px-1.5 py-0.5 text-ink-3 flex items-center" title={ano}>
-                                        {ano}
-                                      </span>
-                                      <span className="flex items-center px-1.5 py-0.5 bg-surface-solid border-l border-edge/50 shrink-0">
-                                        <span className="text-emerald-500 font-bold" title="Close">{c}</span>
-                                        <span className="text-ink-3 mx-0.5">/</span>
-                                        <span className="text-red-400 font-bold" title="Open">{o}</span>
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
                           </div>
-                        )})}
-                      </div>
-                      </ChartCard>
-                      <ChartCard title="Priority Status" className="h-60 shrink-0">
-                        <EChart key="dk-status-chart" option={statusOpt} />
-                      </ChartCard>
+                          <div className="h-2 bg-surface-2 rounded-full overflow-hidden flex">
+                            <div className="h-full bg-emerald-500" style={{ width: `${u.pct}%` }} />
+                            {u.total > 0 && <div className="h-full bg-red-400" style={{ width: `${100 - u.pct}%` }} />}
+                          </div>
+                          {anomalyList.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-2 px-1">
+                              {anomalyList.map(([ano, count]) => {
+                                const statuses = agg.byUptAnomaliStatus?.get(u.name)?.get(ano);
+                                let c = 0, o = 0;
+                                if (statuses) {
+                                  for (const [st, num] of statuses.entries()) {
+                                    if (st.toUpperCase() === "CLOSE") c += num;
+                                    else o += num;
+                                  }
+                                }
+                                
+                                return (
+                                  <div key={ano} className="flex items-stretch text-[9px] rounded bg-surface-2 border border-edge/50 overflow-hidden">
+                                    <span className="px-1.5 py-0.5 text-ink-3 flex items-center" title={ano}>
+                                      {ano}
+                                    </span>
+                                    <span className="flex items-center px-1.5 py-0.5 bg-surface-solid border-l border-edge/50 shrink-0">
+                                      <span className="text-emerald-500 font-bold" title="Close">{c}</span>
+                                      <span className="text-ink-3 mx-0.5">/</span>
+                                      <span className="text-red-400 font-bold" title="Open">{o}</span>
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )})}
                     </div>
+                  </ChartCard>
 
-                    {/* Charts (Right - 2/3) */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <ChartCard title="Priority Status" className="lg:col-span-1 h-[26rem]">
+                      <EChart key="dk-status-chart" option={statusOpt} />
+                    </ChartCard>
                     <div className="lg:col-span-2 flex flex-col gap-4">
-                      <ChartCard title="Distribusi Jenis Anomali ABO" className="flex-1 min-h-80">
+                      <ChartCard title="Distribusi Jenis Anomali ABO" className="flex-1 min-h-[16rem]">
                         <EChart key="dk-anomali-chart" option={anomaliOpt} />
                       </ChartCard>
-                      <ChartCard title="Status AHI Pada Aset Critical Subsistem" className="h-80">
+                      <ChartCard title="Status AHI Pada Aset Critical Subsistem" className="flex-1 min-h-[16rem]">
                         <EChart key="dk-ahi-critical-chart" option={ahiOpt} />
                       </ChartCard>
                     </div>

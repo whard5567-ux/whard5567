@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { Zap, TrendingUp, ClipboardList, Map, LayoutDashboard, ChevronLeft, ChevronRight, Activity, ShieldAlert, Settings } from "lucide-react";
+import { Zap, TrendingUp, ClipboardList, Map, LayoutDashboard, ChevronLeft, ChevronRight, Activity, ShieldAlert, Settings, FolderOpen } from "lucide-react";
 
 const NAV = [
   { href: "/pareto", label: "GANGGUAN TRAFO", icon: TrendingUp },
@@ -15,6 +15,7 @@ const NAV = [
   { href: "/penggantian-mtu", label: "PENGGANTIAN MTU", icon: Settings },
   { href: "/asesment-bushing", label: "MONITORING BUSHING", icon: ShieldAlert },
   { href: "/monitoring-sealing-end", label: "MONITORING SEALING END", icon: ShieldAlert },
+  { href: "/penyimpanan-dokumen", label: "PENYIMPANAN DOKUMEN", icon: FolderOpen },
 ];
 
 export function Sidebar() {

@@ -282,7 +282,7 @@ export function ParetoView({ rows }: { rows: GgnRow[] }) {
 
   return (
     <div className="space-y-4">
-      {showDeck && <Deck slides={slides} onExit={() => setShowDeck(false)} />}
+      {/* {showDeck && <Deck slides={slides} onExit={() => setShowDeck(false)} />} */}
 
       {/* Filter bar */}
       <div className="rise rise-1 relative z-40 flex flex-wrap items-center gap-2">
@@ -291,12 +291,15 @@ export function ParetoView({ rows }: { rows: GgnRow[] }) {
         <MultiSelect label="Tahun" options={available.tahun} selected={sel.tahun} onChange={set("tahun")} />
         <MultiSelect label="Kategori" options={available.kategori} selected={sel.kategori} onChange={set("kategori")} />
         
+        {/*
         <button
           onClick={() => setShowDeck(true)}
           className="ml-2 flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-1.5 text-[13px] font-medium text-ink-2 hover:bg-surface-3 hover:text-ink transition-colors"
         >
           <Presentation className="h-4 w-4" /> Slide Deck
         </button>
+        */}
+
 
         <div className="ml-auto flex items-center gap-3">
           <span className="num text-xs text-ink-3">Total <b className="text-ink">{agg.total}</b> gangguan</span>

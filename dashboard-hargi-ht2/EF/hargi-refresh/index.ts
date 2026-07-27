@@ -116,9 +116,10 @@ function mapCeAbo(rows: Row[]) {
       const isOpenClose = ["OPEN", "CLOSE"].includes(status);
       const kondisiAkhir = clean(r[col.kondisi_akhir]).toUpperCase();
       const hasKondisi = kondisiAkhir.includes("GOOD") || kondisiAkhir.includes("FAIR") || kondisiAkhir.includes("POOR") || kondisiAkhir.includes("CRITICAL");
+      const uptVal = clean(r[col.upt]).toUpperCase();
       
       // Mengizinkan masuk ke database jika statusnya OPEN/CLOSE ATAU jika memiliki Kondisi Akhir
-      return isHargi && (isOpenClose || hasKondisi);
+      return isHargi && (isOpenClose || hasKondisi) && uptVal !== "N/A" && uptVal !== "#N/A";
     })
     .map((r) => ({
       kode: clean(r[col.kode]),

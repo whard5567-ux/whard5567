@@ -18,6 +18,7 @@ export default async function CeAboPage() {
              coalesce(kondisi_akhir,'') kondisi_akhir, coalesce(status_terkini,'') status_terkini
       from hargi_ht2.ce_abo_findings
       where upper(trim(sub_bidang)) = 'HARGI'
+        and upper(trim(coalesce(upt, ''))) not in ('N/A', '#N/A')
       order by id` as unknown as CeRow[];
 
   const lastLog = await sql`

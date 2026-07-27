@@ -20,7 +20,13 @@ export function RefreshButton({ targets = ["ce", "pareto", "abo", "bushing"] }: 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targets })
       });
-      const initBody = await initRes.json();
+      let initBody;
+      const initText = await initRes.text();
+      try {
+        initBody = JSON.parse(initText);
+      } catch (err) {
+        throw new Error(`Init API returned HTML/Invalid JSON (Status: ${initRes.status}). Content snippet: ${initText.slice(0, 50)}...`);
+      }
       if (!initRes.ok || !initBody.ok) throw new Error(initBody.error ?? `Init failed`);
       logId = initBody.logId;
 
@@ -39,7 +45,13 @@ export function RefreshButton({ targets = ["ce", "pareto", "abo", "bushing"] }: 
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ sheet: sheetName, offset, limit }),
           });
-          const chunkBody = await chunkRes.json();
+          let chunkBody;
+          const chunkText = await chunkRes.text();
+          try {
+            chunkBody = JSON.parse(chunkText);
+          } catch (err) {
+            throw new Error(`Chunk API returned HTML/Invalid JSON (Status: ${chunkRes.status}). Content snippet: ${chunkText.slice(0, 50)}...`);
+          }
           if (!chunkRes.ok || !chunkBody.ok) throw new Error(chunkBody.error ?? `Chunk failed at ${label} offset ${offset}`);
           
           hasMore = chunkBody.hasMore;
@@ -61,7 +73,14 @@ export function RefreshButton({ targets = ["ce", "pareto", "abo", "bushing"] }: 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ logId, targets }),
       });
-      if (!finishRes.ok) throw new Error("Finish failed");
+      let finishBody;
+      const finishText = await finishRes.text();
+      try {
+        finishBody = JSON.parse(finishText);
+      } catch (err) {
+        throw new Error(`Finish API returned HTML/Invalid JSON (Status: ${finishRes.status}). Content snippet: ${finishText.slice(0, 50)}...`);
+      }
+      if (!finishRes.ok || !finishBody.ok) throw new Error(finishBody.error ?? "Finish failed");
 
       setState("ok");
       setMsg(totalRows > 0 ? `${totalRows} baris tersinkron` : "Selesai (0 baris)");

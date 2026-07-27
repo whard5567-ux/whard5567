@@ -371,20 +371,20 @@ export type AboFilters = {
 export function aboAvailableFilters(rows: AboRow[]): AboFilters {
   const uniq = (vals: string[]) => [...new Set(vals.filter(Boolean))].sort();
   return {
-    upt: uniq(rows.map((r) => r.upt)),
-    status: uniq(rows.map((r) => r.status)),
-    jenis_anomali: uniq(rows.map((r) => r.jenis_anomali)),
-    status_fix: uniq(rows.map((r) => r.status_fix)),
+    upt: uniq(rows.map((r) => r.upt || "(Kosong)")),
+    status: uniq(rows.map((r) => r.status || "(Kosong)")),
+    jenis_anomali: uniq(rows.map((r) => r.jenis_anomali || "(Kosong)")),
+    status_fix: uniq(rows.map((r) => r.status_fix || "OPEN")),
   };
 }
 
 export function aboFilterRows(rows: AboRow[], f: AboFilters): AboRow[] {
   return rows.filter(
     (r) =>
-      (f.upt.length === 0 || f.upt.includes(r.upt)) &&
-      (f.status.length === 0 || f.status.includes(r.status)) &&
-      (f.jenis_anomali.length === 0 || f.jenis_anomali.includes(r.jenis_anomali)) &&
-      (f.status_fix.length === 0 || f.status_fix.includes(r.status_fix)),
+      (f.upt.length === 0 || f.upt.includes(r.upt || "(Kosong)")) &&
+      (f.status.length === 0 || f.status.includes(r.status || "(Kosong)")) &&
+      (f.jenis_anomali.length === 0 || f.jenis_anomali.includes(r.jenis_anomali || "(Kosong)")) &&
+      (f.status_fix.length === 0 || f.status_fix.includes(r.status_fix || "OPEN")),
   );
 }
 
@@ -394,12 +394,16 @@ export function aboAggregate(rows: AboRow[]) {
   const open = total - closed;
   const progress = total > 0 ? Math.round((closed / total) * 10000) / 100 : 0;
 
-  const byUpt = countBy2(rows, (r) => r.upt, (r) => r.status_fix);
-  const byStatus = countBy(rows, (r) => r.status);
-  const byAnomali = countBy(rows, (r) => r.jenis_anomali);
-  const byAnomaliStatus = countBy2(rows, (r) => r.jenis_anomali, (r) => r.status_fix);
-  const byUptAnomali = countBy2(rows, (r) => r.upt, (r) => r.jenis_anomali);
-  const byUptAnomaliStatus = countBy3(rows, (r) => r.upt, (r) => r.jenis_anomali, (r) => r.status_fix);
+  const getUpt = (r: AboRow) => r.upt || "(Kosong)";
+  const getStatusFix = (r: AboRow) => r.status_fix || "OPEN";
+  const getJenisAnomali = (r: AboRow) => r.jenis_anomali || "(Kosong)";
+
+  const byUpt = countBy2(rows, getUpt, getStatusFix);
+  const byStatus = countBy(rows, (r) => r.status || "(Kosong)");
+  const byAnomali = countBy(rows, getJenisAnomali);
+  const byAnomaliStatus = countBy2(rows, getJenisAnomali, getStatusFix);
+  const byUptAnomali = countBy2(rows, getUpt, getJenisAnomali);
+  const byUptAnomaliStatus = countBy3(rows, getUpt, getJenisAnomali, getStatusFix);
 
   return {
     stats: { total, closed, open, progress },

@@ -119,6 +119,7 @@ export function stackedBarOption(
         data: s.data,
         itemStyle: { color: s.color, borderRadius: 2 },
         barMaxWidth: 36,
+        barCategoryGap: "40%",
         label: {
           show: true,
           color: "#fff",
@@ -455,6 +456,7 @@ export function simpleBarOption(
         itemStyle: { color: s.color, borderRadius: horizontal ? [0, 3, 3, 0] : [3, 3, 0, 0] },
       })),
       barMaxWidth: horizontal ? 26 : 48,
+      barCategoryGap: "40%",
       label: {
         show: true,
         position: horizontal ? "right" : "top",

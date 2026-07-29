@@ -3,43 +3,45 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --bg: #f3f5f9;
+  --bg: #f2f7f4;
   --bg-photo: url("/backgrounds/clean-bg.png");
-  --bg-veil: linear-gradient(180deg, rgba(243, 245, 249, 0.45) 0%, rgba(243, 245, 249, 0.25) 45%, rgba(243, 245, 249, 0.65) 100%);
-  --surface: rgba(255, 255, 255, 0.74);
+  --bg-veil: linear-gradient(180deg, rgba(242, 247, 244, 0.35) 0%, rgba(242, 247, 244, 0.15) 45%, rgba(242, 247, 244, 0.55) 100%);
+  --surface: rgba(255, 255, 255, 0.60);
   --surface-solid: #ffffff;
-  --surface-2: rgba(228, 232, 241, 0.85);
-  --edge: rgba(15, 23, 42, 0.1);
-  --edge-strong: rgba(15, 23, 42, 0.18);
-  --ink: #0f172a;
-  --ink-2: #45556c;
-  --ink-3: #7c8aa0;
-  --accent: #4338ca;
-  --accent-soft: rgba(67, 56, 202, 0.09);
-  --amber: #d97706;
+  --surface-2: rgba(235, 245, 238, 0.85);
+  --edge: rgba(255, 255, 255, 0.6);
+  --edge-strong: rgba(16, 185, 129, 0.2);
+  --ink: #000000;
+  --ink-2: #1e293b;
+  --ink-3: #334155;
+  --text-glow: 0 1px 3px rgba(255, 255, 255, 0.9);
+  --accent: #10b981;
+  --accent-soft: rgba(16, 185, 129, 0.12);
+  --amber: #f59e0b;
   --chart-grid: rgba(15, 23, 42, 0.07);
   --chart-border: #ffffff;
-  --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -20px rgba(15, 23, 42, 0.3);
+  --shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.05), 0 10px 24px -10px rgba(15, 23, 42, 0.15);
 }
 
 .dark {
-  --bg: #0a101f;
+  --bg: #06120e;
   --bg-photo: url("/backgrounds/clean-bg.png");
-  --bg-veil: linear-gradient(180deg, rgba(8, 13, 26, 0.45) 0%, rgba(8, 13, 26, 0.25) 45%, rgba(8, 13, 26, 0.65) 100%);
-  --surface: rgba(15, 23, 41, 0.72);
-  --surface-solid: #101828;
-  --surface-2: rgba(26, 37, 60, 0.85);
-  --edge: rgba(148, 163, 184, 0.14);
-  --edge-strong: rgba(148, 163, 184, 0.25);
-  --ink: #e2e8f0;
-  --ink-2: #94a3b8;
-  --ink-3: #64748b;
-  --accent: #818cf8;
-  --accent-soft: rgba(129, 140, 248, 0.13);
+  --bg-veil: linear-gradient(180deg, rgba(6, 18, 14, 0.5) 0%, rgba(6, 18, 14, 0.3) 45%, rgba(6, 18, 14, 0.7) 100%);
+  --surface: rgba(12, 25, 20, 0.65);
+  --surface-solid: #0b1712;
+  --surface-2: rgba(20, 38, 30, 0.85);
+  --edge: rgba(148, 184, 163, 0.15);
+  --edge-strong: rgba(148, 184, 163, 0.25);
+  --ink: #ffffff;
+  --ink-2: #f8fafc;
+  --ink-3: #e2e8f0;
+  --text-glow: 0 1px 4px rgba(0, 0, 0, 0.95);
+  --accent: #34d399;
+  --accent-soft: rgba(52, 211, 153, 0.12);
   --amber: #fbbf24;
-  --chart-grid: rgba(148, 163, 184, 0.09);
-  --chart-border: #101828;
-  --shadow: 0 1px 2px rgba(2, 6, 23, 0.4), 0 12px 32px -20px rgba(2, 6, 23, 0.9);
+  --chart-grid: rgba(148, 184, 163, 0.09);
+  --chart-border: #0b1712;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 12px 32px -20px rgba(0, 0, 0, 0.9);
 }
 
 @theme inline {
@@ -76,8 +78,9 @@ body::before {
   inset: 0;
   z-index: -2;
   background-image: var(--bg-photo);
-  background-size: 100% 100%;
+  background-size: cover;
   background-position: center;
+  background-attachment: fixed;
   background-repeat: no-repeat;
 }
 
@@ -94,8 +97,9 @@ body::after {
   border: 1px solid var(--edge);
   border-radius: 0.75rem;
   box-shadow: var(--shadow);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  text-shadow: var(--text-glow);
+  backdrop-filter: blur(16px) saturate(110%);
+  -webkit-backdrop-filter: blur(16px) saturate(110%);
 }
 
 .card-title {
@@ -158,7 +162,8 @@ body::after {
 .deck {
   background-color: var(--bg);
   background-image: var(--bg-veil), var(--bg-photo);
-  background-size: cover, 100% 100%;
+  background-size: cover, cover;
   background-position: center, center;
+  background-attachment: fixed, fixed;
   background-repeat: no-repeat, no-repeat;
 }

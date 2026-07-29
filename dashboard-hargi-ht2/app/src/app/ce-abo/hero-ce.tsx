@@ -113,7 +113,7 @@ function TotalPanel({ stats }: { stats: { total: number; open: number; closed: n
       <div className="grid items-end gap-4 [grid-template-columns:auto_1px_auto_1px_auto]">
         <BigStat value={stats.total.toLocaleString("id-ID")} label="Total Temuan" />
         <span className="self-stretch bg-edge" style={{ width: 1 }} />
-        <BigStat value={String(stats.open)} label="Open (F/P/C)" color="#f87171" />
+        <BigStat value={String(stats.open)} label="Open (Status Terkini)" color="#f87171" />
         <span className="self-stretch bg-edge" style={{ width: 1 }} />
         <BigStat value={`${stats.progress.toFixed(1)}%`} label="Selesai" color={pctColor(stats.progress)} />
       </div>

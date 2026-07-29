@@ -227,7 +227,7 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
                     <tr key={i} className="border-b border-edge/40">
                       <td className="py-3 font-medium">{u.name}</td>
                       <td className="num px-3 text-center">{u.total}</td>
-                      <td className="num px-3 text-center text-emerald-500">{u.vg + u.g}</td>
+                      <td className="num px-3 text-center text-emerald-500">{u.closed}</td>
                       <td className="pl-3 text-right">
                         <div className="flex items-center justify-end gap-3">
                           <div className="num w-12 font-bold">{u.progress}%</div>
@@ -343,8 +343,8 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
           levels={heroAgg.levelSummary.map((l) => ({
             level: l.level,
             total: l.total,
-            close: l.vg + l.g,
-            open: l.f + l.p + l.c,
+            close: l.closed,
+            open: l.open,
           }))}
           active={activeLevel}
           onToggle={toggleLevel}

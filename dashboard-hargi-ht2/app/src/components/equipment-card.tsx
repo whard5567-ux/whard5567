@@ -51,10 +51,10 @@ export function EquipmentCard({
              <div className="relative w-28 h-28 flex items-center justify-center">
                <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                  {/* Background (Open) */}
-                 <path className="text-rose-500" strokeWidth="3" stroke="currentColor" fill="none"
+                 <path stroke="#f43f5e" strokeWidth="3" fill="none"
                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                  {/* Foreground (Realisasi) */}
-                 <path className="text-emerald-500" strokeDasharray={`${data.progress}, 100`} strokeWidth="3" stroke="currentColor" fill="none"
+                 <path stroke="#10b981" strokeDasharray={`${data.progress}, 100`} strokeWidth="3" fill="none"
                    strokeLinecap="round"
                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                </svg>

@@ -130,8 +130,8 @@ export function ceAggregate(rows: CeRow[]) {
   );
 
   const total = findingRows.length;
-  const closed = findingRows.filter((r) => isClosed(r.kondisi_akhir)).length;
-  const open = findingRows.filter((r) => isOpen(r.kondisi_akhir)).length;
+  const closed = findingRows.filter((r) => (r.status_terkini || "").toUpperCase().trim() === "CLOSE").length;
+  const open = findingRows.filter((r) => (r.status_terkini || "").toUpperCase().trim() === "OPEN").length;
   const progress = total > 0 ? Math.round((closed / total) * 10000) / 100 : 0;
 
   const condMap: Record<string, string> = {
@@ -150,7 +150,8 @@ export function ceAggregate(rows: CeRow[]) {
   const byUpt = countByCond(findingRows, (r) => r.upt, (r) => r.kondisi_akhir);
   const bySubBidang = countByCond(findingRows, (r) => r.sub_bidang, (r) => r.kondisi_akhir);
   const byLevel = countByCond(findingRows, (r) => r.level_anomali, (r) => r.kondisi_akhir);
-  const byLevelStatusTerkini = countBy2(findingRows, (r) => r.level_anomali, (r) => r.status_terkini.trim().toUpperCase());
+  const byLevelStatusTerkini = countBy2(findingRows, (r) => r.level_anomali, (r) => (r.status_terkini || "").toUpperCase().trim());
+  const byUptStatusTerkini = countBy2(findingRows, (r) => r.upt, (r) => (r.status_terkini || "").toUpperCase().trim());
   
   const uraianTop = [...countBy(findingRows, (r) => r.uraian).entries()]
     .sort((a, b) => b[1] - a[1])
@@ -165,7 +166,11 @@ export function ceAggregate(rows: CeRow[]) {
       const f = conds.get("Fair") ?? 0;
       const p = conds.get("Poor") ?? 0;
       const c = conds.get("Critical") ?? 0;
-      return { level, vg, g, f, p, c, total: vg + g + f + p + c };
+      const stCounts = byLevelStatusTerkini.get(level);
+      const closed = stCounts?.get("CLOSE") ?? 0;
+      const open = stCounts?.get("OPEN") ?? 0;
+      const total = closed + open;
+      return { level, vg, g, f, p, c, total, closed, open };
     })
     .sort((a, b) => b.total - a.total);
 
@@ -199,8 +204,8 @@ export function ceAggregate(rows: CeRow[]) {
   // Rekap GIS: aggregate stats for rows where Level Anomali is GIS
   const gisRows = findingRows.filter(isGis);
   const gisTotal = gisRows.length;
-  const gisClosed = gisRows.filter((r) => isClosed(r.kondisi_akhir)).length;
-  const gisOpen = gisRows.filter((r) => isOpen(r.kondisi_akhir)).length;
+  const gisClosed = gisRows.filter((r) => (r.status_terkini || "").toUpperCase().trim() === "CLOSE").length;
+  const gisOpen = gisRows.filter((r) => (r.status_terkini || "").toUpperCase().trim() === "OPEN").length;
   const gisSummary = {
     total: gisTotal,
     closed: gisClosed,
@@ -216,10 +221,13 @@ export function ceAggregate(rows: CeRow[]) {
       const f = conds.get("Fair") ?? 0;
       const p = conds.get("Poor") ?? 0;
       const c = conds.get("Critical") ?? 0;
-      const closed = vg + g;
-      const total = vg + g + f + p + c;
+      
+      const stCounts = byUptStatusTerkini.get(name);
+      const closed = stCounts?.get("CLOSE") ?? 0;
+      const open = stCounts?.get("OPEN") ?? 0;
+      const total = closed + open;
       const progress = total > 0 ? Math.round((closed / total) * 10000) / 100 : 0;
-      return { name, vg, g, f, p, c, total, progress };
+      return { name, vg, g, f, p, c, total, closed, open, progress };
     })
     .sort((a, b) => b.total - a.total);
 

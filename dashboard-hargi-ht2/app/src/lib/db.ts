@@ -15,9 +15,8 @@ function makeSql() {
     ssl: "require",
     max: 4,
     prepare: false,
-    idle_timeout: 20,
-    keep_alive: 30,
-    max_lifetime: 60 * 15,
+    idle_timeout: 5,
+    max_lifetime: 60 * 5,
     connect_timeout: 10,
     // @ts-expect-error - family is passed to underlying socket but not typed
     family: 4,

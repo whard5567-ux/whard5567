@@ -13,7 +13,7 @@ import { EChart, useChartTheme } from "@/components/echart";
 import { pieOption, rankedBarOption, simpleBarOption, stackedBarOption } from "@/lib/echart-options";
 import { BigStat, Caption, pctColor } from "@/components/hero-primitives";
 import { ZoomIn, ZoomOut, Maximize, Presentation, Image as ImageIcon } from "lucide-react";
-import { toJpeg } from "html-to-image";
+import { exportDashboardAsJpg } from "@/lib/export-image";
 import { Deck, DeckCover, DeckChartSlide, DeckContentSlide } from "@/components/slide-deck";
 
 const EMPTY: AboFilters = { upt: [], status: [], jenis_anomali: [], status_fix: [] };
@@ -168,14 +168,7 @@ export function Abo2026View({
             onClick={async () => {
               setIsExportingJpg(true);
               try {
-                const element = document.getElementById("dashboard-capture");
-                if (element) {
-                  const dataUrl = await toJpeg(element, { quality: 0.9, backgroundColor: "#0f172a" });
-                  const link = document.createElement("a");
-                  link.download = `Dashboard_ABO_2026.jpg`;
-                  link.href = dataUrl;
-                  link.click();
-                }
+                await exportDashboardAsJpg("dashboard-capture", `Dashboard_ABO_2026.jpg`);
               } catch (err) {
                 console.error("Failed to export JPG", err);
                 alert("Gagal mengunduh gambar JPG.");

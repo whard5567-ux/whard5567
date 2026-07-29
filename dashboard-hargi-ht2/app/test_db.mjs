@@ -1,27 +1,19 @@
+import fs from 'fs';
 import postgres from 'postgres';
 
-async function test() {
-  const base = postgres(process.env.DB_URL, { max: 1, family: 4 });
-  const start = Date.now();
+async function main() {
+  const envFile = fs.readFileSync('.env.local', 'utf8');
+  const match = envFile.match(/DB_URL="(.*)"/);
+  const dbUrl = match ? match[1] : envFile.match(/DB_URL=(.*)/)[1];
+  
+  const sql = postgres(dbUrl, { ssl: 'require' });
   try {
-    const selUnits = [];
-    console.log("Executing massive query...");
-    const row = await base`
-    select
-      (select jsonb_build_object(
-         'total', count(*)::int,
-         'closed', count(*) filter (where kondisi_akhir like '%1-%' or kondisi_akhir like '%2-%')::int,
-         'open', count(*) filter (where kondisi_akhir like '%3-%' or kondisi_akhir like '%4-%' or kondisi_akhir like '%5-%')::int)
-       from hargi_ht2.ce_abo_findings
-       where (upt = any(${selUnits}) or ${selUnits.length === 0})) as ce
-       -- Testing just one part first to see if it's the query execution
-    `;
-    console.log("Success in", Date.now() - start, "ms");
-  } catch (err) {
-    console.error("Error caught:", err);
+    const result = await sql`SELECT count(*) FROM hargi_ht2.kondisi_ahi_mtu`;
+    console.log("kondisi_ahi_mtu count:", result[0].count);
+  } catch (e) {
+    console.error(e);
   } finally {
-    process.exit(0);
+    await sql.end();
   }
 }
-
-test();
+main();

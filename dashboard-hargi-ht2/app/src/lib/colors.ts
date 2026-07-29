@@ -11,11 +11,12 @@ export const CONDITION_COLORS: Record<string, string> = {
 
 export function conditionColor(label: string): string {
   const l = String(label).toLowerCase();
-  const key = Object.keys(CONDITION_COLORS).find((k) => {
-    const lowK = k.toLowerCase();
-    return l.includes(lowK) || lowK.includes(l);
-  }) ?? "N/A";
-  return CONDITION_COLORS[key];
+  if (l.includes("critical") || l.includes("5")) return CONDITION_COLORS["5-Critical"];
+  if (l.includes("poor") || l.includes("4")) return CONDITION_COLORS["4-Poor"];
+  if (l.includes("fair") || l.includes("3")) return CONDITION_COLORS["3-Fair"];
+  if (l.includes("very good") || l.includes("1")) return CONDITION_COLORS["1-Very Good"];
+  if (l.includes("good") || l.includes("2")) return CONDITION_COLORS["2-Good"];
+  return CONDITION_COLORS["N/A"];
 }
 
 // Sort kondisi 5-Critical dulu → 1-Very Good (konsisten dengan baseline)

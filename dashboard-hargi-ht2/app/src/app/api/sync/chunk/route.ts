@@ -8,6 +8,7 @@ const PARETO = { id: "1hf_lpXI6x3hBDfEHX8r8q15w6F3wtlzIABGibdpCMhg", gid: "18824
 const ABO_2026 = { id: "11HQFitHH8xISZvVxuG0rd0q84Y6tOtCi7jO7wDbUeVs", gid: "1761063736" };
 const ASESMENT_BUSHING = { id: "1_bBncuTGo8s687UOP9XuU1ObhmTxDlPFXZzwVqYBs3M", gid: "0" };
 const PENGGANTIAN_MTU = { id: "1o4X0Fwxi14b50yNNECqNHnec8VM4ij62zNSWHNQ4K_s", gid: "1674311415" };
+const AHI_MTU = { id: "1MquufLxJD59lXOpjU2pF06aw1IhlPpVBBZ1OQXAHm7M", gid: "0" };
 
 type Row = Record<string, string>;
 
@@ -307,6 +308,42 @@ function mapPenggantianMtu(rows: string[][]) {
     }));
 }
 
+function mapAhiMtu(rows: string[][]) {
+  if (rows.length <= 1) return [];
+  return rows
+    .filter((r) => r.length >= 24 && clean(r[0]) !== "" && clean(r[0]).toUpperCase() !== "TECHIDENTNO")
+    .map((r) => {
+      const rawObj: Record<string, string> = {};
+      r.forEach((val, idx) => {
+        rawObj[`col_${idx}`] = clean(val);
+      });
+      return {
+        techidentno: clean(r[0]),
+        mtu: clean(r[1]),
+        ultg: clean(r[2]),
+        upt: clean(r[3]),
+        gardu_induk: clean(r[4]),
+        bay: clean(r[5]),
+        fasa: clean(r[6]),
+        teg: clean(r[7]),
+        merk: clean(r[8]),
+        tipe: clean(r[9]),
+        tahun_buat: clean(r[10]),
+        usia: clean(r[11]),
+        parameter_pemicu: clean(r[15]),
+        rencana_tindak_lanjut: clean(r[16]),
+        target_penyelesaian: clean(r[17]),
+        ahi_setelah_evaluasi: clean(r[18]),
+        penempatan: clean(r[19]),
+        hartrans: clean(r[20]),
+        koordinat: clean(r[21]),
+        kategori_usia: clean(r[22]),
+        ahi_terbaru: clean(r[23]),
+        raw: rawObj,
+      };
+    });
+}
+
 export async function POST(req: Request) {
   try {
     const { sheet, offset = 0, limit = 5000 } = await req.json();
@@ -382,6 +419,19 @@ export async function POST(req: Request) {
         });
       }
       return Response.json({ ok: true, hasMore: mtuRaw.length >= limit, nextOffset: offset + limit, rowCount: mtu.length });
+    } else if (sheet === "ahi_mtu") {
+      if (offset > 0) return Response.json({ ok: true, hasMore: false, nextOffset: offset, rowCount: 0 });
+      const url = `https://docs.google.com/spreadsheets/d/${AHI_MTU.id}/export?format=csv&gid=${AHI_MTU.gid}`;
+      const ahiMtuRaw = await fetchSheetRowsAsArray(url);
+      const ahiMtu = mapAhiMtu(ahiMtuRaw);
+      if (ahiMtu.length > 0) {
+        await sql.begin(async (tx) => {
+          for (let i = 0; i < ahiMtu.length; i += 200) {
+            await tx`insert into hargi_ht2.kondisi_ahi_mtu ${tx(ahiMtu.slice(i, i + 200))}`;
+          }
+        });
+      }
+      return Response.json({ ok: true, hasMore: false, nextOffset: offset, rowCount: ahiMtu.length });
     }
 
     return Response.json({ ok: false, error: "Unknown sheet" }, { status: 400 });

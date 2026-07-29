@@ -7,10 +7,11 @@ const PARETO = { id: "1hf_lpXI6x3hBDfEHX8r8q15w6F3wtlzIABGibdpCMhg", gid: "18824
 const ABO_2026 = { id: "11HQFitHH8xISZvVxuG0rd0q84Y6tOtCi7jO7wDbUeVs", gid: "1761063736" };
 const ASESMENT_BUSHING = { id: "1_bBncuTGo8s687UOP9XuU1ObhmTxDlPFXZzwVqYBs3M", gid: "0" };
 const PENGGANTIAN_MTU = { id: "1o4X0Fwxi14b50yNNECqNHnec8VM4ij62zNSWHNQ4K_s", gid: "1674311415" };
+const AHI_MTU = { id: "1MquufLxJD59lXOpjU2pF06aw1IhlPpVBBZ1OQXAHm7M", gid: "0" };
 
 type Meta = { name: string | null; modifiedTime: string | null };
 
-async function fetchSheetMetadata(sql: any, targets: string[] = ["ce", "pareto", "abo", "bushing", "mtu"]): Promise<{ ce: Meta; pareto: Meta; abo: Meta; bushing: Meta; mtu: Meta }> {
+async function fetchSheetMetadata(sql: any, targets: string[] = ["ce", "pareto", "abo", "bushing", "mtu", "ahi_mtu"]): Promise<{ ce: Meta; pareto: Meta; abo: Meta; bushing: Meta; mtu: Meta; ahiMtu: Meta }> {
   try {
     const [row] = await sql`
       select decrypted_secret from vault.decrypted_secrets
@@ -23,7 +24,8 @@ async function fetchSheetMetadata(sql: any, targets: string[] = ["ce", "pareto",
         pareto: { name: null, modifiedTime: null },
         abo: { name: null, modifiedTime: null },
         bushing: { name: null, modifiedTime: null },
-        mtu: { name: null, modifiedTime: null }
+        mtu: { name: null, modifiedTime: null },
+        ahiMtu: { name: null, modifiedTime: null }
       };
     }
 
@@ -68,14 +70,15 @@ async function fetchSheetMetadata(sql: any, targets: string[] = ["ce", "pareto",
       const j = await r.json();
       return { name: j.name ?? null, modifiedTime: j.modifiedTime ?? null };
     };
-    const [ce, pareto, abo, bushing, mtu] = await Promise.all([
+    const [ce, pareto, abo, bushing, mtu, ahiMtu] = await Promise.all([
       targets.includes("ce") ? getMod(CE_ABO.id) : Promise.resolve({ name: null, modifiedTime: null }),
       targets.includes("pareto") ? getMod(PARETO.id) : Promise.resolve({ name: null, modifiedTime: null }),
       targets.includes("abo") ? getMod(ABO_2026.id) : Promise.resolve({ name: null, modifiedTime: null }),
       targets.includes("bushing") ? getMod(ASESMENT_BUSHING.id) : Promise.resolve({ name: null, modifiedTime: null }),
-      targets.includes("mtu") ? getMod(PENGGANTIAN_MTU.id) : Promise.resolve({ name: null, modifiedTime: null })
+      targets.includes("mtu") ? getMod(PENGGANTIAN_MTU.id) : Promise.resolve({ name: null, modifiedTime: null }),
+      targets.includes("ahi_mtu") ? getMod(AHI_MTU.id) : Promise.resolve({ name: null, modifiedTime: null })
     ]);
-    return { ce, pareto, abo, bushing, mtu };
+    return { ce, pareto, abo, bushing, mtu, ahiMtu };
   } catch (e) {
     console.error("[sheet-meta]", e instanceof Error ? e.message : e);
     return { 
@@ -83,14 +86,15 @@ async function fetchSheetMetadata(sql: any, targets: string[] = ["ce", "pareto",
       pareto: { name: null, modifiedTime: null },
       abo: { name: null, modifiedTime: null },
       bushing: { name: null, modifiedTime: null },
-      mtu: { name: null, modifiedTime: null }
+      mtu: { name: null, modifiedTime: null },
+      ahiMtu: { name: null, modifiedTime: null }
     };
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const { logId, error, targets = ["ce", "pareto", "abo", "bushing", "mtu"] } = await req.json();
+    const { logId, error, targets = ["ce", "pareto", "abo", "bushing", "mtu", "ahi_mtu"] } = await req.json();
 
     if (error) {
       await sql`update hargi_ht2.refresh_log
@@ -105,7 +109,8 @@ export async function POST(req: Request) {
     const [{ count: c3 }] = await sql`select count(*) from hargi_ht2.abo_2026`;
     const [{ count: c4 }] = await sql`select count(*) from hargi_ht2.asesment_bushing`;
     const [{ count: c5 }] = await sql`select count(*) from hargi_ht2.penggantian_mtu`;
-    const total = Number(c1) + Number(c2) + Number(c3) + Number(c4) + Number(c5);
+    const [{ count: c6 }] = await sql`select count(*) from hargi_ht2.kondisi_ahi_mtu`;
+    const total = Number(c1) + Number(c2) + Number(c3) + Number(c4) + Number(c5) + Number(c6);
 
     const meta = await fetchSheetMetadata(sql, targets);
 
@@ -117,11 +122,13 @@ export async function POST(req: Request) {
             sheet_modified_abo=${targets.includes('abo') ? meta.abo.modifiedTime : null},
             sheet_modified_bushing=${targets.includes('bushing') ? meta.bushing.modifiedTime : null},
             sheet_modified_mtu=${targets.includes('mtu') ? meta.mtu.modifiedTime : null},
+            sheet_modified_ahi_mtu=${targets.includes('ahi_mtu') ? meta.ahiMtu.modifiedTime : null},
             sheet_name_ce=${targets.includes('ce') ? meta.ce.name : null}, 
             sheet_name_pareto=${targets.includes('pareto') ? meta.pareto.name : null},
             sheet_name_abo=${targets.includes('abo') ? meta.abo.name : null},
             sheet_name_bushing=${targets.includes('bushing') ? meta.bushing.name : null},
-            sheet_name_mtu=${targets.includes('mtu') ? meta.mtu.name : null}
+            sheet_name_mtu=${targets.includes('mtu') ? meta.mtu.name : null},
+            sheet_name_ahi_mtu=${targets.includes('ahi_mtu') ? meta.ahiMtu.name : null}
         where id=${logId}`;
     } catch (err) {
       console.warn("Fallback metadata refresh_log:", err);
@@ -131,10 +138,12 @@ export async function POST(req: Request) {
             sheet_modified_pareto=${targets.includes('pareto') ? meta.pareto.modifiedTime : null},
             sheet_modified_abo=${targets.includes('abo') ? meta.abo.modifiedTime : null},
             sheet_modified_mtu=${targets.includes('mtu') ? meta.mtu.modifiedTime : null},
+            sheet_modified_ahi_mtu=${targets.includes('ahi_mtu') ? meta.ahiMtu.modifiedTime : null},
             sheet_name_ce=${targets.includes('ce') ? meta.ce.name : null}, 
             sheet_name_pareto=${targets.includes('pareto') ? meta.pareto.name : null},
             sheet_name_abo=${targets.includes('abo') ? meta.abo.name : null},
-            sheet_name_mtu=${targets.includes('mtu') ? meta.mtu.name : null}
+            sheet_name_mtu=${targets.includes('mtu') ? meta.mtu.name : null},
+            sheet_name_ahi_mtu=${targets.includes('ahi_mtu') ? meta.ahiMtu.name : null}
         where id=${logId}`;
     }
 

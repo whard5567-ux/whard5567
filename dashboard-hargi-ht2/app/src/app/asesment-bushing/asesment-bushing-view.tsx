@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { Search, Info, CheckCircle2, AlertTriangle, AlertCircle, FileSpreadsheet, LayoutGrid, Presentation, Database, Image as ImageIcon } from "lucide-react";
-import { toJpeg } from "html-to-image";
+import { exportDashboardAsJpg } from "@/lib/export-image";
 import { conditionColor } from "@/lib/colors";
 import { pieOption, hbarOption, groupedBarOption } from "@/lib/echart-options";
 import { ChartCard } from "@/components/chart-card";
@@ -765,14 +765,7 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
                 onClick={async () => {
                   setIsExportingJpg(true);
                   try {
-                    const element = document.getElementById("dashboard-capture");
-                    if (element) {
-                      const dataUrl = await toJpeg(element, { quality: 0.9, backgroundColor: "#0f172a" });
-                      const link = document.createElement("a");
-                      link.download = `Dashboard_Asesment_Bushing.jpg`;
-                      link.href = dataUrl;
-                      link.click();
-                    }
+                      await exportDashboardAsJpg("dashboard-capture", `Dashboard_Asesment_Bushing.jpg`);
                   } catch (err) {
                     console.error("Failed to export JPG", err);
                     alert("Gagal mengunduh gambar JPG.");

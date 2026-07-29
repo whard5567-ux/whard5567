@@ -9,6 +9,7 @@ const CE_ABO = { id: "1-eC0GdeMwYDhnGzCSM8viO0HvD6X0NdlMaWOxe2P9ZM", gid: "29915
 const PARETO = { id: "1hf_lpXI6x3hBDfEHX8r8q15w6F3wtlzIABGibdpCMhg", gid: "1882488493" };
 const ABO_2026 = { id: "11HQFitHH8xISZvVxuG0rd0q84Y6tOtCi7jO7wDbUeVs", gid: "1761063736" };
 const ASESMENT_BUSHING = { id: "1_bBncuTGo8s687UOP9XuU1ObhmTxDlPFXZzwVqYBs3M", gid: "0" };
+const AHI_MTU = { id: "1MquufLxJD59lXOpjU2pF06aw1IhlPpVBBZ1OQXAHm7M", gid: "0" };
 
 type Row = Record<string, string>;
 
@@ -252,12 +253,48 @@ function mapAsesmentBushing(rows: string[][]) {
     });
 }
 
+function mapAhiMtu(rows: string[][]) {
+  if (rows.length <= 1) return [];
+  return rows
+    .filter((r) => r.length >= 24 && clean(r[0]) !== "" && clean(r[0]).toUpperCase() !== "TECHIDENTNO")
+    .map((r) => {
+      const rawObj: Record<string, string> = {};
+      r.forEach((val, idx) => {
+        rawObj[`col_${idx}`] = clean(val);
+      });
+      return {
+        techidentno: clean(r[0]),
+        mtu: clean(r[1]),
+        ultg: clean(r[2]),
+        upt: clean(r[3]),
+        gardu_induk: clean(r[4]),
+        bay: clean(r[5]),
+        fasa: clean(r[6]),
+        teg: clean(r[7]),
+        merk: clean(r[8]),
+        tipe: clean(r[9]),
+        tahun_buat: clean(r[10]),
+        usia: clean(r[11]),
+        parameter_pemicu: clean(r[15]),
+        rencana_tindak_lanjut: clean(r[16]),
+        target_penyelesaian: clean(r[17]),
+        ahi_setelah_evaluasi: clean(r[18]),
+        penempatan: clean(r[19]),
+        hartrans: clean(r[20]),
+        koordinat: clean(r[21]),
+        kategori_usia: clean(r[22]),
+        ahi_terbaru: clean(r[23]),
+        raw: rawObj,
+      };
+    });
+}
+
 
 // Metadata sheet (modifiedTime) via Drive API + SA platform-google-api (key di vault).
 // FAIL-SAFE: gagal = null, refresh tetap sukses. Timeout ketat 5 detik.
 // deno-lint-ignore no-explicit-any
 type Meta = { name: string | null; modifiedTime: string | null };
-async function fetchSheetMetadata(sql: any): Promise<{ ce: Meta; pareto: Meta; abo: Meta; bushing: Meta }> {
+async function fetchSheetMetadata(sql: any): Promise<{ ce: Meta; pareto: Meta; abo: Meta; bushing: Meta; ahiMtu: Meta }> {
   try {
     const [row] = await sql`
       select decrypted_secret from vault.decrypted_secrets
@@ -303,20 +340,22 @@ async function fetchSheetMetadata(sql: any): Promise<{ ce: Meta; pareto: Meta; a
       const j = await r.json();
       return { name: j.name ?? null, modifiedTime: j.modifiedTime ?? null };
     };
-    const [ce, pareto, abo, bushing] = await Promise.all([
+    const [ce, pareto, abo, bushing, ahiMtu] = await Promise.all([
       getMod(CE_ABO.id),
       getMod(PARETO.id),
       getMod(ABO_2026.id),
-      getMod(ASESMENT_BUSHING.id)
+      getMod(ASESMENT_BUSHING.id),
+      getMod(AHI_MTU.id)
     ]);
-    return { ce, pareto, abo, bushing };
+    return { ce, pareto, abo, bushing, ahiMtu };
   } catch (e) {
     console.error("[sheet-meta]", e instanceof Error ? e.message : e);
     return { 
       ce: { name: null, modifiedTime: null }, 
       pareto: { name: null, modifiedTime: null },
       abo: { name: null, modifiedTime: null },
-      bushing: { name: null, modifiedTime: null }
+      bushing: { name: null, modifiedTime: null },
+      ahiMtu: { name: null, modifiedTime: null }
     };
   }
 }
@@ -337,7 +376,7 @@ Deno.serve(async (req: Request) => {
       insert into hargi_ht2.refresh_log (source) values ('all') returning id`;
     logId = logRow.id;
 
-    const [ceRaw, ggnRaw, aboRaw, bushingRaw, meta] = await Promise.all([
+    const [ceRaw, ggnRaw, aboRaw, bushingRaw, ahiMtuRaw, meta] = await Promise.all([
       fetchSheetFiltered(CE_ABO, (letterOf) => {
         const sb = letterOf("sub", "bidang");
         const st = letterOf("status", "terkini");
@@ -347,16 +386,19 @@ Deno.serve(async (req: Request) => {
       fetchSheetRows(PARETO),
       fetchSheetRows(ABO_2026),
       fetchSheetRowsAsArray(ASESMENT_BUSHING),
+      fetchSheetRowsAsArray(AHI_MTU),
       fetchSheetMetadata(sql),
     ]);
     const ce = mapCeAbo(ceRaw);
     const ggn = mapPareto(ggnRaw);
     const abo = mapAbo2026(aboRaw);
     const bushing = mapAsesmentBushing(bushingRaw);
+    const ahiMtu = mapAhiMtu(ahiMtuRaw);
 
     if (ce.length === 0) throw new Error("Sheet CE ABO menghasilkan 0 baris — refresh dibatalkan.");
     if (ggn.length === 0) throw new Error("Sheet gangguan trafo menghasilkan 0 baris — refresh dibatalkan.");
     if (bushing.length === 0) throw new Error("Sheet asesment bushing menghasilkan 0 baris — refresh dibatalkan.");
+    if (ahiMtu.length === 0) throw new Error("Sheet AHI MTU menghasilkan 0 baris — refresh dibatalkan.");
 
     await sql.begin(async (tx) => {
       // advisory lock: 2 refresh barengan antri, gak saling hapus di tengah jalan
@@ -385,6 +427,13 @@ Deno.serve(async (req: Request) => {
           await tx`insert into hargi_ht2.asesment_bushing ${tx(bushing.slice(i, i + 200))}`;
         }
       }
+
+      await tx`delete from hargi_ht2.kondisi_ahi_mtu`;
+      if (ahiMtu.length > 0) {
+        for (let i = 0; i < ahiMtu.length; i += 200) {
+          await tx`insert into hargi_ht2.kondisi_ahi_mtu ${tx(ahiMtu.slice(i, i + 200))}`;
+        }
+      }
     });
 
     // Try to update metadata columns in refresh_log. If the columns do not exist
@@ -392,20 +441,22 @@ Deno.serve(async (req: Request) => {
     // to preserve other data.
     try {
       await sql`update hargi_ht2.refresh_log
-        set status='success', row_count=${ce.length + ggn.length + abo.length + bushing.length}, finished_at=now(),
+        set status='success', row_count=${ce.length + ggn.length + abo.length + bushing.length + ahiMtu.length}, finished_at=now(),
             sheet_modified_ce=${meta.ce.modifiedTime}, 
             sheet_modified_pareto=${meta.pareto.modifiedTime},
             sheet_modified_abo=${meta.abo.modifiedTime},
             sheet_modified_bushing=${meta.bushing.modifiedTime},
+            sheet_modified_ahi_mtu=${meta.ahiMtu.modifiedTime},
             sheet_name_ce=${meta.ce.name}, 
             sheet_name_pareto=${meta.pareto.name},
             sheet_name_abo=${meta.abo.name},
-            sheet_name_bushing=${meta.bushing.name}
+            sheet_name_bushing=${meta.bushing.name},
+            sheet_name_ahi_mtu=${meta.ahiMtu.name}
         where id=${logId}`;
     } catch (err) {
       console.warn("Could not write all metadata to refresh_log, trying fallback without new columns:", err instanceof Error ? err.message : err);
       await sql`update hargi_ht2.refresh_log
-        set status='success', row_count=${ce.length + ggn.length + abo.length + bushing.length}, finished_at=now(),
+        set status='success', row_count=${ce.length + ggn.length + abo.length + bushing.length + ahiMtu.length}, finished_at=now(),
             sheet_modified_ce=${meta.ce.modifiedTime}, 
             sheet_modified_pareto=${meta.pareto.modifiedTime},
             sheet_modified_abo=${meta.abo.modifiedTime},
@@ -420,7 +471,8 @@ Deno.serve(async (req: Request) => {
       ce_abo: ce.length, 
       gangguan_trafo: ggn.length,
       abo_2026: abo.length,
-      asesment_bushing: bushing.length
+      asesment_bushing: bushing.length,
+      ahi_mtu: ahiMtu.length
     }), {
       headers: { "Content-Type": "application/json" },
     });

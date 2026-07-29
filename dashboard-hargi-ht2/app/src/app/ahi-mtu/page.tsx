@@ -1,39 +1,65 @@
+import { sql } from "@/lib/db";
+import { sheetEditUrl } from "@/lib/sheets";
 import { PageHeader } from "@/components/page-header";
+import { AhiMtuView } from "./ahi-mtu-view";
 
-export default function AhiMtuPage() {
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
+export type AhiMtuRow = {
+  id: number;
+  techidentno: string;
+  mtu: string;
+  ultg: string;
+  upt: string;
+  gardu_induk: string;
+  bay: string;
+  fasa: string;
+  teg: string;
+  merk: string;
+  tipe: string;
+  tahun_buat: string;
+  usia: string;
+  parameter_pemicu: string;
+  rencana_tindak_lanjut: string;
+  target_penyelesaian: string;
+  ahi_setelah_evaluasi: string;
+  penempatan: string;
+  hartrans: string;
+  koordinat: string;
+  kategori_usia: string;
+  ahi_terbaru: string;
+  raw: Record<string, string>;
+};
+
+export default async function AhiMtuPage() {
+  const rows = await sql`
+      select * from hargi_ht2.kondisi_ahi_mtu
+      order by id
+  ` as unknown as AhiMtuRow[];
+
+  const lastLog = await sql`
+      select sheet_name_ahi_mtu as sheet_name,
+             to_char(sheet_modified_ahi_mtu::timestamptz at time zone 'Asia/Jakarta', 'DD Mon YYYY') sheet_mod
+      from hargi_ht2.refresh_log
+      where status = 'success' and finished_at is not null and sheet_modified_ahi_mtu is not null
+      order by id desc limit 1` as unknown as { sheet_name: string | null; sheet_mod: string | null }[];
+  
+  const last = lastLog[0] || {};
+
   return (
-    <div className="space-y-6">
+    <>
       <PageHeader
         title="KONDISI AHI MTU"
         subtitle="Monitoring kesehatan aset MTU · UIT Jawa Bagian Tengah"
+        sourceUrl={sheetEditUrl({ id: "1MquufLxJD59lXOpjU2pF06aw1IhlPpVBBZ1OQXAHm7M", gid: "0" })}
+        sheetName={last?.sheet_name ?? null}
+        sheetModified={last?.sheet_mod ?? null}
+        syncTargets={["ahi_mtu"]}
       />
       
-      <div className="flex min-h-[400px] flex-col items-center justify-center rounded-xl border border-dashed border-edge bg-surface-2 p-12 text-center">
-        <div className="mb-4 rounded-full bg-accent-soft p-4 text-accent">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-8 w-8"
-          >
-            <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7" />
-            <path d="M16 5V3" />
-            <path d="M8 5V3" />
-            <path d="M3 9h18" />
-            <path d="m16 19 2 2 4-4" />
-          </svg>
-        </div>
-        <h3 className="text-lg font-bold">Halaman Dalam Pengembangan</h3>
-        <p className="mx-auto max-w-sm text-sm text-ink-3">
-          Halaman Asset Healthy Index MTU sedang disiapkan. Data akan segera tersedia setelah proses integrasi selesai.
-        </p>
-      </div>
-    </div>
+      <AhiMtuView rows={rows} />
+    </>
   );
 }

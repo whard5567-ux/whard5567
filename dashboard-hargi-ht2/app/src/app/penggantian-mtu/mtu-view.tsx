@@ -8,7 +8,7 @@ import { pieOption, hbarOption, simpleBarOption, groupedBarOption, stackedBarOpt
 import { PALETTE } from "@/lib/colors";
 import { EChart, useChartTheme } from "@/components/echart";
 import { TableMtu } from "./table-mtu"; // We will create this or use a generic table
-import { toJpeg } from "html-to-image";
+import { exportDashboardAsJpg } from "@/lib/export-image";
 import { FileText, Factory, MapPin, Zap, Search, Image as ImageIcon } from "lucide-react";
 
 export function MtuView({ rows }: { rows: MtuRow[] }) {
@@ -243,14 +243,7 @@ export function MtuView({ rows }: { rows: MtuRow[] }) {
             onClick={async () => {
               setIsExportingJpg(true);
               try {
-                const element = document.getElementById("dashboard-capture");
-                if (element) {
-                  const dataUrl = await toJpeg(element, { quality: 0.9, backgroundColor: "#0f172a" });
-                  const link = document.createElement("a");
-                  link.download = `Dashboard_Penggantian_MTU.jpg`;
-                  link.href = dataUrl;
-                  link.click();
-                }
+                await exportDashboardAsJpg("dashboard-capture", `Dashboard_Penggantian_MTU.jpg`);
               } catch (err) {
                 console.error("Failed to export JPG", err);
                 alert("Gagal mengunduh gambar JPG.");

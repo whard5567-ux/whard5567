@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw, CircleAlert, CircleCheck } from "lucide-react";
 
-export function RefreshButton({ targets = ["ce", "pareto", "abo", "bushing"] }: { targets?: string[] }) {
+export function RefreshButton({ targets = ["ce", "pareto", "abo", "bushing", "mtu", "ahi_mtu"] }: { targets?: string[] }) {
   const router = useRouter();
   const [state, setState] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [msg, setMsg] = useState("");
@@ -65,6 +65,7 @@ export function RefreshButton({ targets = ["ce", "pareto", "abo", "bushing"] }: 
       if (targets.includes("abo")) await syncSheet("abo", "ABO 2026");
       if (targets.includes("bushing")) await syncSheet("bushing", "Asesment Bushing");
       if (targets.includes("mtu")) await syncSheet("mtu", "Penggantian MTU");
+      if (targets.includes("ahi_mtu")) await syncSheet("ahi_mtu", "Kondisi AHI MTU");
 
       // 4. Finish
       setMsg("Menyelesaikan...");

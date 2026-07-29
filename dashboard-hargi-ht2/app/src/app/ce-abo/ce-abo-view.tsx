@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Presentation, Image as ImageIcon } from "lucide-react";
-import { toJpeg } from "html-to-image";
+import { exportDashboardAsJpg } from "@/lib/export-image";
 import {
   ceAggregate, ceAvailableFilters, ceFilterRows,
   type CeFilters, type CeRow,
@@ -267,14 +267,7 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
             onClick={async () => {
               setIsExportingJpg(true);
               try {
-                const element = document.getElementById("dashboard-capture");
-                if (element) {
-                  const dataUrl = await toJpeg(element, { quality: 0.9, backgroundColor: "#0f172a" });
-                  const link = document.createElement("a");
-                  link.download = `Dashboard_CE_ABO.jpg`;
-                  link.href = dataUrl;
-                  link.click();
-                }
+                await exportDashboardAsJpg("dashboard-capture", `Dashboard_CE_ABO.jpg`);
               } catch (err) {
                 console.error("Failed to export JPG", err);
                 alert("Gagal mengunduh gambar JPG.");

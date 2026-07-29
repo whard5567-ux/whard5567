@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Presentation, Download, Image as ImageIcon } from "lucide-react";
-import { toJpeg } from "html-to-image";
+import { exportDashboardAsJpg } from "@/lib/export-image";
 import {
   ggnAggregate, ggnAvailableFilters, ggnFilterRows, monthIndex, sortMonths,
   type GgnFilters, type GgnRow,
@@ -124,6 +124,27 @@ export function ParetoView({ rows }: { rows: GgnRow[] }) {
   // Pareto Options for Slides
   const catParetoOpt = useMemo(() => paretoOption(t, agg.byKategori.map(([name, value]) => ({ name, value, color: colorOf(name) }))), [t, agg.byKategori, colorOf]);
   const unitParetoOpt = useMemo(() => paretoOption(t, unitLabels.map((name, i) => ({ name: name.replace(/^UPT /, ""), value: unitTotals[i], color: "#38bdf8" }))), [t, unitLabels, unitTotals]);
+
+  // Heatmap Table Logic
+  const sortedKategoris = useMemo(() => {
+    return [...available.kategori].sort((a, b) => {
+      const sumA = years.reduce((acc, y) => acc + (agg.byTahunKategori.get(y)?.get(a) ?? 0), 0);
+      const sumB = years.reduce((acc, y) => acc + (agg.byTahunKategori.get(y)?.get(b) ?? 0), 0);
+      return sumB - sumA;
+    });
+  }, [available.kategori, years, agg.byTahunKategori]);
+
+  const maxVal = useMemo(() => {
+    return Math.max(1, ...years.flatMap(y => sortedKategoris.map(c => agg.byTahunKategori.get(y)?.get(c) ?? 0)));
+  }, [years, sortedKategoris, agg.byTahunKategori]);
+
+  const getHeatmapColor = useCallback((val: number, max: number, theme: string) => {
+    if (val === 0) return theme === 'dark' ? 'rgba(74, 222, 128, 0.15)' : 'rgba(187, 247, 208, 0.35)';
+    const ratio = val / max;
+    const hue = 100 - (ratio * 100); 
+    const alpha = theme === 'dark' ? 0.3 + ratio * 0.4 : 0.4 + ratio * 0.4;
+    return `hsla(${hue}, 80%, 50%, ${alpha})`;
+  }, []);
 
   // ===== Slide Deck Slides =====
   const slides = useMemo(() => [
@@ -349,14 +370,7 @@ export function ParetoView({ rows }: { rows: GgnRow[] }) {
             onClick={async () => {
               setIsExportingJpg(true);
               try {
-                const element = document.getElementById("dashboard-capture");
-                if (element) {
-                  const dataUrl = await toJpeg(element, { quality: 0.9, backgroundColor: "#0f172a" });
-                  const link = document.createElement("a");
-                  link.download = `Dashboard_Gangguan_Trafo_${curMonth}_${curYear}.jpg`;
-                  link.href = dataUrl;
-                  link.click();
-                }
+                await exportDashboardAsJpg("dashboard-capture", `Dashboard_Gangguan_Trafo_${curMonth}_${curYear}.jpg`);
               } catch (err) {
                 console.error("Failed to export JPG", err);
                 alert("Gagal mengunduh gambar JPG.");
@@ -411,6 +425,61 @@ export function ParetoView({ rows }: { rows: GgnRow[] }) {
           <EChart key={`yoy-${t.key}`} option={yoyOpt} />
         </ChartCard>
       </div>
+      </div>
+
+      {/* Tabel Heatmap Penyebab */}
+      <div className="grid grid-cols-1 gap-3">
+        <ChartCard title="Heatmap Penyebab Gangguan" className="rise rise-6">
+          <div className="overflow-x-auto overflow-y-hidden pb-2">
+            <table className="w-full text-center text-[13px] border-collapse">
+              <thead>
+                <tr>
+                  <th className="border border-edge bg-surface-2 p-2 text-left font-semibold text-ink uppercase tracking-wider" rowSpan={2}>Penyebab</th>
+                  <th className="border border-edge bg-surface-2 p-2 font-semibold text-ink uppercase tracking-wider" colSpan={years.length}>Tahun</th>
+                  <th className="border border-edge bg-surface-2 p-2 font-semibold text-ink uppercase tracking-wider" rowSpan={2}>Total ({years.length} Tahun)</th>
+                </tr>
+                <tr>
+                  {years.map(y => (
+                    <th key={y} className="border border-edge bg-surface-2 p-2 font-semibold text-ink">{y}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sortedKategoris.map(cat => {
+                  const rowTotal = years.reduce((acc, y) => acc + (agg.byTahunKategori.get(y)?.get(cat) ?? 0), 0);
+                  if (rowTotal === 0) return null;
+                  return (
+                    <tr key={cat} className="transition-colors hover:bg-surface-2/50">
+                      <td className="border border-edge p-2 text-left font-medium text-ink-2 uppercase">{cat}</td>
+                      {years.map(y => {
+                        const val = agg.byTahunKategori.get(y)?.get(cat) ?? 0;
+                        return (
+                          <td 
+                            key={y} 
+                            className="border border-edge p-2 font-bold num text-ink shadow-inner" 
+                            style={{ backgroundColor: getHeatmapColor(val, maxVal, t.key) }}
+                          >
+                            {val}
+                          </td>
+                        );
+                      })}
+                      <td className="border border-edge p-2 font-bold num text-ink">{rowTotal}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="bg-surface-2 font-bold text-ink uppercase tracking-wider">
+                  <td className="border border-edge p-2 text-left">TOTAL</td>
+                  {years.map(y => (
+                    <td key={y} className="border border-edge p-2 num">{agg.byTahun.get(y) ?? 0}</td>
+                  ))}
+                  <td className="border border-edge p-2 num">{agg.total}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </ChartCard>
       </div>
 
       {/* Tabel rincian */}

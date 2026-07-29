@@ -310,35 +310,65 @@ function mapPenggantianMtu(rows: string[][]) {
 
 function mapAhiMtu(rows: string[][]) {
   if (rows.length <= 1) return [];
-  return rows
-    .filter((r) => r.length >= 24 && clean(r[0]) !== "" && clean(r[0]).toUpperCase() !== "TECHIDENTNO")
+  const headers = rows[0];
+  const dataRows = rows.slice(1);
+
+  const opt = (...terms: string[]) =>
+    headers.findIndex((h) => terms.every((t) => h.toLowerCase().includes(t.toLowerCase())));
+
+  const col = {
+    techidentno: opt("techidentno"),
+    mtu: opt("mtu") !== -1 ? opt("mtu") : opt("peralatan"),
+    ultg: opt("ultg"),
+    upt: opt("upt"),
+    gardu_induk: opt("gardu", "induk"),
+    bay: opt("bay"),
+    fasa: opt("fasa"),
+    teg: opt("teg"),
+    merk: opt("merk"),
+    tipe: opt("tipe"),
+    tahun_buat: opt("tahun", "buat"),
+    usia: opt("usia"),
+    parameter_pemicu: opt("parameter", "pemicu"),
+    rencana_tindak_lanjut: opt("rencana", "tindak", "lanjut"),
+    target_penyelesaian: opt("target", "penyelesai"),
+    ahi_setelah_evaluasi: opt("ahi", "setelah", "evaluasi"),
+    penempatan: opt("penempatan"),
+    hartrans: opt("hartrans"),
+    koordinat: opt("koordinat"),
+    kategori_usia: opt("kategori", "usia"),
+    ahi_terbaru: opt("ahi", "terbaru"),
+  };
+
+  return dataRows
+    .filter((r) => col.techidentno >= 0 && clean(r[col.techidentno]) !== "")
     .map((r) => {
       const rawObj: Record<string, string> = {};
       r.forEach((val, idx) => {
         rawObj[`col_${idx}`] = clean(val);
       });
       return {
-        techidentno: clean(r[0]),
-        mtu: clean(r[1]),
-        ultg: clean(r[2]),
-        upt: clean(r[3]),
-        gardu_induk: clean(r[4]),
-        bay: clean(r[5]),
-        fasa: clean(r[6]),
-        teg: clean(r[7]),
-        merk: clean(r[8]),
-        tipe: clean(r[9]),
-        tahun_buat: clean(r[10]),
-        usia: clean(r[11]),
-        parameter_pemicu: clean(r[15]),
-        rencana_tindak_lanjut: clean(r[16]),
-        target_penyelesaian: clean(r[17]),
-        ahi_setelah_evaluasi: clean(r[18]),
-        penempatan: clean(r[19]),
-        hartrans: clean(r[20]),
-        koordinat: clean(r[21]),
-        kategori_usia: clean(r[22]),
-        ahi_terbaru: clean(r[23]),
+        techidentno: col.techidentno >= 0 ? clean(r[col.techidentno]) : "",
+        mtu: col.mtu >= 0 ? clean(r[col.mtu]) : "",
+        ultg: col.ultg >= 0 ? clean(r[col.ultg]) : "",
+        upt: col.upt >= 0 ? clean(r[col.upt]) : "",
+        gardu_induk: col.gardu_induk >= 0 ? clean(r[col.gardu_induk]) : "",
+        bay: col.bay >= 0 ? clean(r[col.bay]) : "",
+        fasa: col.fasa >= 0 ? clean(r[col.fasa]) : "",
+        teg: col.teg >= 0 ? clean(r[col.teg]) : "",
+        merk: col.merk >= 0 ? clean(r[col.merk]) : "",
+        tipe: col.tipe >= 0 ? clean(r[col.tipe]) : "",
+        tahun_buat: col.tahun_buat >= 0 ? clean(r[col.tahun_buat]) : "",
+        usia: col.usia >= 0 ? clean(r[col.usia]) : "",
+        parameter_pemicu: col.parameter_pemicu >= 0 ? clean(r[col.parameter_pemicu]) : "",
+        rencana_tindak_lanjut: col.rencana_tindak_lanjut >= 0 ? clean(r[col.rencana_tindak_lanjut]) : "",
+        target_penyelesaian: col.target_penyelesaian >= 0 ? clean(r[col.target_penyelesaian]) : "",
+        ahi_setelah_evaluasi: col.ahi_setelah_evaluasi >= 0 ? clean(r[col.ahi_setelah_evaluasi]) : "",
+        penempatan: col.penempatan >= 0 ? clean(r[col.penempatan]) : "",
+        hartrans: col.hartrans >= 0 ? clean(r[col.hartrans]) : "",
+        koordinat: col.koordinat >= 0 ? clean(r[col.koordinat]) : "",
+        kategori_usia: col.kategori_usia >= 0 ? clean(r[col.kategori_usia]) : "",
+        ahi_terbaru: col.ahi_terbaru >= 0 ? clean(r[col.ahi_terbaru]) : "",
         raw: rawObj,
       };
     });

@@ -143,13 +143,14 @@ export function ceAggregate(rows: CeRow[]) {
   };
 
   const kaSummary = countBy(findingRows, (r) => norm(r.kondisi_akhir));
-  // TARGET AWAL menggunakan seluruh populasi (termasuk yang status '-')
-  const kondisiAwal = countBy(rows, (r) => norm(r.kondisi_awal));
-  const kondisiTerkini = countBy(rows, (r) => norm(r.kondisi_akhir));
+  // TARGET AWAL hanya menggunakan data yang ada status terkininya (OPEN/CLOSE)
+  const kondisiAwal = countBy(findingRows, (r) => norm(r.kondisi_awal));
+  const kondisiTerkini = countBy(findingRows, (r) => norm(r.kondisi_akhir));
   
   const byUpt = countByCond(findingRows, (r) => r.upt, (r) => r.kondisi_akhir);
   const bySubBidang = countByCond(findingRows, (r) => r.sub_bidang, (r) => r.kondisi_akhir);
   const byLevel = countByCond(findingRows, (r) => r.level_anomali, (r) => r.kondisi_akhir);
+  const byLevelStatusTerkini = countBy2(findingRows, (r) => r.level_anomali, (r) => r.status_terkini.trim().toUpperCase());
   
   const uraianTop = [...countBy(findingRows, (r) => r.uraian).entries()]
     .sort((a, b) => b[1] - a[1])
@@ -237,41 +238,79 @@ export function ceAggregate(rows: CeRow[]) {
     })
     .slice(0, 50);
 
+  // Helper for EquipmentCard stats (Realisasi Close uses status_terkini === "CLOSE")
+  const calcEqStat = (fullGroupRows: CeRow[], findingGroupRows: CeRow[]) => {
+    const total = findingGroupRows.length;
+    const closed = findingGroupRows.filter(r => (r.status_terkini || "").toUpperCase().trim() === "CLOSE").length;
+    const progress = total > 0 ? Math.round((closed / total) * 10000) / 100 : 0;
+    
+    const byUraian = new Map<string, { total: number; closed: number }>();
+    
+    for (const r of fullGroupRows) {
+      const u = (r.uraian || "").trim();
+      if (!u) continue;
+      if (!byUraian.has(u)) byUraian.set(u, { total: 0, closed: 0 });
+    }
+
+    for (const r of findingGroupRows) {
+      const u = (r.uraian || "").trim();
+      if (!u) continue;
+      if (!byUraian.has(u)) byUraian.set(u, { total: 0, closed: 0 });
+      
+      const stat = byUraian.get(u)!;
+      stat.total += 1;
+      if ((r.status_terkini || "").toUpperCase().trim() === "CLOSE") {
+        stat.closed += 1;
+      }
+    }
+  
+    const uraians = [...byUraian.entries()].map(([u, stat]) => {
+      const uTotal = stat.total;
+      const uClosed = stat.closed;
+      return {
+        uraian: u,
+        total: uTotal,
+        closed: uClosed,
+        progress: uTotal > 0 ? Math.round((uClosed / uTotal) * 10000) / 100 : 100
+      };
+    }).sort((a, b) => {
+      if (b.total !== a.total) return b.total - a.total;
+      return a.uraian.localeCompare(b.uraian);
+    });
+  
+    return { total, closed, progress, uraians };
+  };
+
   // Chart Level Anomali Trafo: filter Kolom C (level_anomali)
-  // Membaca langsung dari keseluruhan `rows` dengan berpatokan pada Kolom O (Kondisi Akhir),
-  // sehingga mengabaikan Kolom Status Terkini (yang bernilai '-' dsb).
-  const trafoRows = rows.filter(r => {
+  const isTrafo = (r: CeRow) => {
     const la = (r.level_anomali || "").toUpperCase();
-    const isTrafo = la.includes("TRAFO") || la.includes("TRANSFORMATOR") || la.includes("TRF");
-    const ka = (r.kondisi_akhir || "").toUpperCase();
-    const hasKondisi = ka.includes("GOOD") || ka.includes("FAIR") || ka.includes("POOR") || ka.includes("CRITICAL");
-    return isTrafo && hasKondisi;
-  });
-  const trafoUraian = countByCond(trafoRows, (r) => (r.uraian || "").trim(), (r) => r.kondisi_akhir);
+    return la.includes("TRAFO") || la.includes("TRANSFORMATOR") || la.includes("TRF");
+  };
+  const trafoStat = calcEqStat(rows.filter(isTrafo), findingRows.filter(isTrafo));
 
-  const mvApparatusRows = rows.filter(r => {
+  const isMvApparatus = (r: CeRow) => {
     const la = (r.level_anomali || "").toUpperCase();
-    const isMv = la.includes("MV APPARATUS");
-    const ka = (r.kondisi_akhir || "").toUpperCase();
-    const hasKondisi = ka.includes("GOOD") || ka.includes("FAIR") || ka.includes("POOR") || ka.includes("CRITICAL");
-    return isMv && hasKondisi;
-  });
-  const mvApparatusUraian = countByCond(mvApparatusRows, (r) => (r.uraian || "").trim(), (r) => r.kondisi_akhir);
+    return la.includes("MV APPARATUS");
+  };
+  const mvApparatusStat = calcEqStat(rows.filter(isMvApparatus), findingRows.filter(isMvApparatus));
 
-  const switchYardRows = rows.filter(r => {
+  const isSwitchYard = (r: CeRow) => {
     const la = (r.level_anomali || "").toUpperCase();
-    const isSy = la.includes("SWITCH YARD") || la.includes("SWITCHYARD");
-    const ka = (r.kondisi_akhir || "").toUpperCase();
-    const hasKondisi = ka.includes("GOOD") || ka.includes("FAIR") || ka.includes("POOR") || ka.includes("CRITICAL");
-    return isSy && hasKondisi;
-  });
-  const switchYardUraian = countByCond(switchYardRows, (r) => (r.uraian || "").trim(), (r) => r.kondisi_akhir);
+    return la.includes("SWITCH YARD") || la.includes("SWITCHYARD");
+  };
+  const switchYardStat = calcEqStat(rows.filter(isSwitchYard), findingRows.filter(isSwitchYard));
+
+  const isGisStat = (r: CeRow) => {
+    const la = (r.level_anomali || "").toUpperCase();
+    return la.includes("GIS");
+  };
+  const gisStat = calcEqStat(rows.filter(isGisStat), findingRows.filter(isGisStat));
 
   return {
     stats: { total, closed, open, progress },
-    kaSummary, kondisiAwal, kondisiTerkini, byUpt, bySubBidang, byLevel,
+    kaSummary, kondisiAwal, kondisiTerkini, byUpt, bySubBidang, byLevel, byLevelTerkini, byLevelStatusTerkini,
     uraianTop, byLevelUraian, levelSummary, levelSummaryTerkini, uptSummary, uptSummaryTerkini, gisSummary,
-    focusUraian, priorityList, trafoUraian, mvApparatusUraian, switchYardUraian,
+    focusUraian, priorityList, trafoStat, mvApparatusStat, switchYardStat, gisStat,
   };
 }
 

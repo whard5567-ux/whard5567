@@ -8,9 +8,10 @@ import {
   type CeFilters, type CeRow,
 } from "@/lib/aggregate";
 import { conditionColor, PALETTE } from "@/lib/colors";
-import { pieOption, groupedBarOption, simpleBarOption, hbarOption } from "@/lib/echart-options";
+import { pieOption, groupedBarOption, simpleBarOption, hbarOption, lineOption } from "@/lib/echart-options";
 import { MultiSelect } from "@/components/multi-select";
 import { ChartCard } from "@/components/chart-card";
+import { EquipmentCard } from "@/components/equipment-card";
 import { HeroCE } from "./hero-ce";
 import { EChart, useChartTheme } from "@/components/echart";
 import { Deck, DeckCover, DeckChartSlide, DeckContentSlide, DeckB, deckPct } from "@/components/slide-deck";
@@ -67,10 +68,8 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
   };
 
   const toGrouped = (dist: Map<string, Map<string, number>>) => {
-    const labels = [...dist.keys()].sort((a, b) => {
-      const sum = (m: Map<string, number>) => [...m.values()].reduce((x, y) => x + y, 0);
-      return sum(dist.get(b)!) - sum(dist.get(a)!);
-    });
+    // Pastikan GIS selalu muncul meskipun nilainya 0 (karena tidak ada status terkini)
+    const labels = [...new Set([...dist.keys(), "GIS"])].sort();
     const conds = ["Very Good", "Good", "Fair", "Poor", "Critical"];
     return groupedBarOption(
       t,
@@ -101,6 +100,67 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
     );
   };
 
+  const targetTerkiniLineOption = useMemo(() => {
+    const conds = ["Very Good", "Good", "Fair", "Poor", "Critical"];
+    return lineOption(
+      t,
+      conds,
+      [
+        {
+          name: "Target Awal",
+          data: conds.map(c => targetAwalAgg.kondisiAwal.get(c) ?? 0),
+          color: "#ef4444",
+          bold: true
+        },
+        {
+          name: "Kondisi Terkini",
+          data: conds.map(c => targetAwalAgg.kondisiTerkini.get(c) ?? 0),
+          color: "#10b981",
+          bold: true
+        }
+      ]
+    );
+  }, [targetAwalAgg, t]);
+
+  const levelStatusOption = useMemo(() => {
+    const labels = [...new Set([...agg.byLevelStatusTerkini.keys(), "GIS"])].sort();
+    
+    const series = [
+      {
+        name: "Target",
+        data: labels.map(l => (agg.byLevelStatusTerkini.get(l)?.get("OPEN") ?? 0) + (agg.byLevelStatusTerkini.get(l)?.get("CLOSE") ?? 0)),
+        color: "#3b82f6",
+        labelFormatter: (p: any) => {
+          const l = labels[p.dataIndex];
+          if (!l) return "";
+          const open = agg.byLevelStatusTerkini.get(l)?.get("OPEN") ?? 0;
+          const close = agg.byLevelStatusTerkini.get(l)?.get("CLOSE") ?? 0;
+          const target = open + close;
+          if (target === 0) return "";
+          const pct = ((close / target) * 100).toFixed(1);
+          return `${target} (${pct}%)`;
+        }
+      },
+      {
+        name: "OPEN",
+        data: labels.map(l => agg.byLevelStatusTerkini.get(l)?.get("OPEN") ?? 0),
+        color: "#ef4444"
+      },
+      {
+        name: "CLOSE",
+        data: labels.map(l => agg.byLevelStatusTerkini.get(l)?.get("CLOSE") ?? 0),
+        color: "#10b981"
+      }
+    ];
+
+    return groupedBarOption(
+      t,
+      labels.map((l) => l.replace(/^UPT /, "")),
+      series,
+      { horizontal: true },
+    );
+  }, [agg.byLevelStatusTerkini, t]);
+
   const uraianTop = agg.uraianTop;
   const uraianLevelLabels = [...agg.byLevelUraian.keys()].sort();
   const uraianAll = [...new Set([...agg.byLevelUraian.values()].flatMap((m) => [...m.keys()]))].sort();
@@ -124,20 +184,11 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
         >
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <ChartCard title="Target Awal vs Kondisi Terkini" className="h-[28rem]">
-              <div className="grid h-full grid-cols-2 gap-2">
-                <div className="flex flex-col">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-ink-3 text-center mb-1">Target Awal</div>
-                  <EChart key={`s-ka-${t.key}`} option={pieOption(t, condSlices(targetAwalAgg.kondisiAwal))} />
-                </div>
-                <div className="flex flex-col">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-ink-3 text-center mb-1">Kondisi Terkini</div>
-                  <EChart key={`s-kt-${t.key}`} option={pieOption(t, condSlices(agg.kondisiTerkini))} />
-                </div>
-              </div>
+              <EChart key={`s-combined-${t.key}`} option={targetTerkiniLineOption} />
             </ChartCard>
             
             <ChartCard title="Distribusi Level Anomali (Target)" className="h-[28rem]">
-              <EChart key={`s-lvl-${t.key}`} option={toGrouped(agg.byLevel)} />
+              <EChart key={`s-lvl-${t.key}`} option={toGrouped(agg.byLevelTerkini)} />
             </ChartCard>
           </div>
 
@@ -284,7 +335,7 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
         </div>
       </div>
 
-      <div id="dashboard-capture" className="space-y-4 pb-2 pt-1">
+      <div id="dashboard-capture-1" className="space-y-4 pb-2 pt-1">
       {/* Hero CE — total + panel per Level Anomali (klik = filter) */}
       <div className="rise rise-2">
         <HeroCE
@@ -300,22 +351,47 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
         />
       </div>
 
-      {/* Pie & Tabel Kondisi Awal & Terkini */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mt-4 mb-4 rise rise-7">
+        <EquipmentCard 
+          number="01"
+          title="LEVEL ANOMALI TRAFO"
+          theme={{ bg: "bg-blue-600", text: "text-blue-600", textValue: "text-blue-700", ring: "border-blue-200" }}
+          imageSrc="/images/trafo.png"
+          data={fullAgg.trafoStat}
+        />
+        <EquipmentCard 
+          number="02"
+          title="LEVEL ANOMALI MV APPARATUS"
+          theme={{ bg: "bg-teal-600", text: "text-teal-600", textValue: "text-teal-700", ring: "border-teal-200" }}
+          imageSrc="/images/mv-apparatus.png"
+          data={fullAgg.mvApparatusStat}
+        />
+        <EquipmentCard 
+          number="03"
+          title="LEVEL ANOMALI SWITCH YARD"
+          theme={{ bg: "bg-orange-500", text: "text-orange-500", textValue: "text-orange-600", ring: "border-orange-200" }}
+          imageSrc="/images/switchyard.png"
+          data={fullAgg.switchYardStat}
+        />
+        <EquipmentCard 
+          number="04"
+          title="LEVEL ANOMALI GIS"
+          theme={{ bg: "bg-purple-600", text: "text-purple-600", textValue: "text-purple-700", ring: "border-purple-200" }}
+          imageSrc="/images/gis.png"
+          data={fullAgg.gisStat}
+        />
+      </div>
+
+      {/* Line Chart & Tabel Kondisi Awal & Terkini */}
       <div className="grid grid-cols-1 mt-3">
         <ChartCard title="Target Awal & Kondisi Terkini" className="rise rise-5 min-h-72">
-          <div className="grid h-full grid-cols-1 items-center gap-6 lg:grid-cols-3">
-            <div className="flex flex-col h-64">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-3 text-center mb-1">Target Awal</div>
-              <EChart key={`ka-${t.key}`} option={pieOption(t, condSlices(targetAwalAgg.kondisiAwal))} />
-            </div>
-            
-            <div className="flex flex-col h-64">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-3 text-center mb-1">Kondisi Terkini</div>
-              <EChart key={`kt-${t.key}`} option={pieOption(t, condSlices(targetAwalAgg.kondisiTerkini))} />
+          <div className="grid h-full grid-cols-1 items-center gap-6 lg:grid-cols-5">
+            <div className="flex flex-col h-72 lg:col-span-3">
+              <EChart key={`combined-${t.key}`} option={targetTerkiniLineOption} />
             </div>
 
             {/* tabel mini level anomali */}
-            <div className="overflow-x-auto scrollbar-thin">
+            <div className="lg:col-span-2">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-edge text-left text-[10px] uppercase tracking-wider text-ink-3">
@@ -356,111 +432,56 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
         </ChartCard>
       </div>
 
+      </div> {/* Akhir Halaman 1 */}
+
+      <div id="dashboard-capture-2" className="space-y-4 pb-2 pt-1 mt-6">
       {/* Distribusi level anomali + sub bidang */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <ChartCard title="Distribusi Level Anomali (Target)" className="rise rise-3 h-80">
-          <EChart key={`lvl-${t.key}`} option={toGrouped(agg.byLevel)} />
+          <EChart key={`lvl-${t.key}`} option={toGrouped(agg.byLevelTerkini)} />
         </ChartCard>
-        <ChartCard title="Kondisi Akhir per Sub Bidang" className="rise rise-4 h-80">
-          <EChart key={`sb-${t.key}`} option={simpleBarOption(t, condSlices(agg.kaSummary), { horizontal: true })} />
+        <ChartCard title="Status Terkini (OPEN vs CLOSE) per Level Anomali" className="rise rise-4 h-80">
+          <EChart key={`sb-${t.key}`} option={levelStatusOption} />
         </ChartCard>
       </div>
 
-      {/* UPT: tabel + grafik disatukan */}
+      {/* UPT: tabel */}
       <div className="grid grid-cols-1 mt-3">
-        <ChartCard title="Ringkasan & Distribusi per UPT" className="rise rise-3">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center lg:items-start">
-            <div className="overflow-x-auto scrollbar-thin lg:col-span-5 xl:col-span-4">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-edge text-left text-[10px] uppercase tracking-wider text-ink-3">
-                    <th className="py-2 pr-2">UPT</th>
-                    <th className="px-2 text-center text-blue-500">Very Good</th>
-                    <th className="px-2 text-center text-emerald-500">Good</th>
-                    <th className="px-2 text-center text-amber-500">Fair</th>
-                    <th className="px-2 text-center text-red-400">Poor</th>
-                    <th className="px-2 text-center text-red-700">Critical</th>
-                    <th className="px-2 text-center">Total</th>
+        <ChartCard title="Ringkasan per UPT" className="rise rise-3">
+          <div className="overflow-x-auto scrollbar-thin">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-edge text-left text-[10px] uppercase tracking-wider text-ink-3">
+                  <th className="py-2 pr-2">UPT</th>
+                  <th className="px-2 text-center text-blue-500">Very Good</th>
+                  <th className="px-2 text-center text-emerald-500">Good</th>
+                  <th className="px-2 text-center text-amber-500">Fair</th>
+                  <th className="px-2 text-center text-red-400">Poor</th>
+                  <th className="px-2 text-center text-red-700">Critical</th>
+                  <th className="px-2 text-center">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {targetAwalAgg.uptSummaryTerkini.map((u) => (
+                  <tr key={u.name} className="border-b border-edge/50 transition-colors hover:bg-surface-2">
+                    <td className="py-2 pr-2 font-medium">{u.name}</td>
+                    <td className="num px-2 text-center text-blue-500">{u.vg}</td>
+                    <td className="num px-2 text-center text-emerald-500">{u.g}</td>
+                    <td className="num px-2 text-center text-amber-500">{u.f}</td>
+                    <td className="num px-2 text-center text-red-400">{u.p}</td>
+                    <td className="num px-2 text-center text-red-700">{u.c}</td>
+                    <td className="num px-2 text-center font-bold">{u.total}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {targetAwalAgg.uptSummaryTerkini.map((u) => (
-                    <tr key={u.name} className="border-b border-edge/50 transition-colors hover:bg-surface-2">
-                      <td className="py-2 pr-2 font-medium">{u.name}</td>
-                      <td className="num px-2 text-center text-blue-500">{u.vg}</td>
-                      <td className="num px-2 text-center text-emerald-500">{u.g}</td>
-                      <td className="num px-2 text-center text-amber-500">{u.f}</td>
-                      <td className="num px-2 text-center text-red-400">{u.p}</td>
-                      <td className="num px-2 text-center text-red-700">{u.c}</td>
-                      <td className="num px-2 text-center font-bold">{u.total}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 lg:col-span-7 xl:col-span-8">
-              {targetAwalAgg.uptSummaryTerkini.map((u) => {
-                const slices = [
-                  { name: "Critical", value: u.c, color: conditionColor("Critical") },
-                  { name: "Poor", value: u.p, color: conditionColor("Poor") },
-                  { name: "Fair", value: u.f, color: conditionColor("Fair") },
-                  { name: "Good", value: u.g, color: conditionColor("Good") },
-                  { name: "Very Good", value: u.vg, color: conditionColor("Very Good") },
-                ].filter(s => s.value > 0);
-
-                return (
-                  <div key={u.name} className="flex flex-col h-56 bg-surface-1/30 rounded-xl p-3 border border-edge/30">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-ink-3 text-center mb-1">
-                      {u.name.replace(/^UPT /, "")}
-                    </div>
-                    <div className="flex-1 min-h-0 relative">
-                      <EChart 
-                        key={`upt-pie-${u.name}-${t.key}`} 
-                        option={pieOption(t, slices)} 
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </ChartCard>
       </div>
 
 
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3 mt-3">
-        <ChartCard 
-          title="Level Anomali Trafo" 
-          badge={`${fullAgg.trafoUraian.size} jenis`} 
-          className="rise rise-7 h-96"
-        >
-          <EChart
-            key={`trafo-${t.key}`}
-            option={toGrouped(fullAgg.trafoUraian)}
-          />
-        </ChartCard>
-        <ChartCard 
-          title="Level Anomali MV Apparatus" 
-          badge={`${fullAgg.mvApparatusUraian.size} jenis`} 
-          className="rise rise-7 h-96"
-        >
-          <EChart
-            key={`mv-${t.key}`}
-            option={toGrouped(fullAgg.mvApparatusUraian)}
-          />
-        </ChartCard>
-        <ChartCard 
-          title="Level Anomali Switch Yard" 
-          badge={`${fullAgg.switchYardUraian.size} jenis`} 
-          className="rise rise-7 h-96"
-        >
-          <EChart
-            key={`sy-${t.key}`}
-            option={toGrouped(fullAgg.switchYardUraian)}
-          />
-        </ChartCard>
-      </div>
+
       </div>
 
       {/* Tabel rincian */}

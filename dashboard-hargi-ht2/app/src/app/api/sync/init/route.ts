@@ -15,6 +15,7 @@ export async function POST(req: Request) {
       if (targets.includes("abo")) await tx`delete from hargi_ht2.abo_2026`;
       if (targets.includes("bushing")) await tx`delete from hargi_ht2.asesment_bushing`;
       if (targets.includes("mtu")) await tx`delete from hargi_ht2.penggantian_mtu`;
+      if (targets.includes("ahi_mtu")) await tx`delete from hargi_ht2.kondisi_ahi_mtu`;
     });
     
     return Response.json({ ok: true, logId: logRow.id });

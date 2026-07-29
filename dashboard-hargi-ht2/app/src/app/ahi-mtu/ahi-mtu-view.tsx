@@ -124,17 +124,43 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
     return pieOption(t, slices);
   }, [stats, t]);
 
-  // ECharts: Klasifikasi Usia (Pie/Donut)
+  // ECharts: Usia MTU (Pie/Donut)
   const usiaChartOption = useMemo(() => {
-    const counts: Record<string, number> = {};
+    const counts: Record<string, number> = {
+      "Sangat Muda": 0,
+      "Muda": 0,
+      "Tua": 0,
+      "Sangat Tua": 0,
+      "Tidak Diketahui": 0
+    };
+    
     filteredRecords.forEach(r => {
-      const cat = r.kategoriUsia;
-      if (cat !== "-") counts[cat] = (counts[cat] || 0) + 1;
+      let val = r.usia;
+      if (!val || val === "-") {
+        counts["Tidak Diketahui"]++;
+        return;
+      }
+      
+      let age = parseInt(val.replace(/\D/g, ''), 10);
+      if (isNaN(age)) {
+        counts["Tidak Diketahui"]++;
+        return;
+      }
+      
+      // Jika value berupa tahun (misal: 2011), hitung umurnya berdasarkan tahun saat ini (2024/2026)
+      if (age > 1900) {
+        age = new Date().getFullYear() - age;
+      }
+      
+      if (age <= 5) counts["Sangat Muda"]++;
+      else if (age <= 15) counts["Muda"]++;
+      else if (age <= 25) counts["Tua"]++;
+      else counts["Sangat Tua"]++;
     });
 
-    const palette = ["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#6366f1"];
     const slices = Object.entries(counts)
-      .map(([name, value], i) => ({ name, value, color: palette[i % palette.length] }));
+      .filter(([_, count]) => count > 0)
+      .map(([name, value]) => ({ name, value }));
 
     return pieOption(t, slices);
   }, [filteredRecords, t]);
@@ -417,7 +443,7 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
             )}
           </ChartCard>
           
-          <ChartCard title="Kategori Usia MTU" className="min-h-[300px] lg:h-80 rise rise-7">
+          <ChartCard title="Usia MTU (Tahun)" className="min-h-[300px] lg:h-80 rise rise-7">
             {stats.total === 0 ? (
               <div className="flex h-full items-center justify-center text-xs text-ink-3">Tidak ada data</div>
             ) : (

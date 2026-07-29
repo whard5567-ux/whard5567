@@ -3,8 +3,8 @@
 import type { EChartsOption, DefaultLabelFormatterCallbackParams } from "echarts";
 import { tooltipPreset, type ChartTheme } from "@/components/echart";
 
-export type Slice = { name: string; value: number; color: string };
-export type StackSeries = { name: string; data: number[]; color: string };
+export type Slice = { name: string; value: number; color?: string };
+export type StackSeries = { name: string; data: number[]; color: string; labelFormatter?: (p: any) => string; };
 
 const FONT_LABEL = 12;
 
@@ -204,7 +204,7 @@ export function lineOption(t: ChartTheme, xLabels: string[], series: LineSeries[
       textStyle: { color: t.tick, fontSize: 12 },
       pageTextStyle: { color: t.tick },
     },
-    grid: { left: 8, right: 24, top: 36, bottom: 8, containLabel: true },
+    grid: { left: 8, right: 40, top: 36, bottom: 8, containLabel: true },
     xAxis: {
       type: "category",
       data: xLabels,
@@ -419,8 +419,8 @@ export function groupedBarOption(
         rotate: horizontal ? 0 : 90,
         align: horizontal ? "left" : "left",
         verticalAlign: horizontal ? "middle" : "middle",
-        formatter: (p: DefaultLabelFormatterCallbackParams) =>
-          Number(p.value) > 0 ? String(p.value) : "",
+        formatter: s.labelFormatter || ((p: DefaultLabelFormatterCallbackParams) =>
+          Number(p.value) > 0 ? String(p.value) : ""),
       },
     })),
   };

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Search, Info, CheckCircle2, AlertTriangle, AlertCircle, FileSpreadsheet, LayoutGrid, Presentation, Database, Image as ImageIcon } from "lucide-react";
+import { Search, Info, CheckCircle2, AlertTriangle, AlertCircle, FileSpreadsheet, LayoutGrid, Presentation, Database, Image as ImageIcon, ExternalLink } from "lucide-react";
 import { exportDashboardAsJpg } from "@/lib/export-image";
 import { conditionColor } from "@/lib/colors";
 import { pieOption, hbarOption, groupedBarOption } from "@/lib/echart-options";
@@ -37,61 +37,11 @@ export interface DBBushingRecord {
 }
 
 const PARAMS_CONFIG = [
-  {
-    name: "Level Minyak",
-    classes: ["NORMAL", "MEDIUM", "LOW"],
-    colors: { "NORMAL": "#10b981", "MEDIUM": "#f59e0b", "LOW": "#ef4444" },
-    getValue: (r: { original: DBBushingRecord }) => {
-      const v = (r.original.level_minyak || "").trim().toUpperCase();
-      if (v === "LOW") return "LOW";
-      if (v === "MEDIUM") return "MEDIUM";
-      return "NORMAL";
-    }
-  },
-  {
-    name: "Hasil Thermovisi",
-    classes: ["NORMAL", "HOTSPOT"],
-    colors: { "NORMAL": "#10b981", "HOTSPOT": "#ef4444" },
-    getValue: (r: { original: DBBushingRecord }) => {
-      const v = (r.original.hasil_thermovisi || "").trim().toUpperCase();
-      if (v === "HOTSPOT") return "HOTSPOT";
-      return "NORMAL";
-    }
-  },
-  {
-    name: "Kondisi Fisik",
-    classes: ["NORMAL", "REMBES", "BOCOR", "RETAK", "PECAH", "KOTOR"],
-    colors: { "NORMAL": "#10b981", "REMBES": "#f59e0b", "BOCOR": "#ef4444", "RETAK": "#ef4444", "PECAH": "#ef4444", "KOTOR": "#f59e0b" },
-    getValue: (r: { original: DBBushingRecord }) => {
-      const v = (r.original.kondisi_fisik || "").trim().toUpperCase();
-      if (v.includes("RETAK")) return "RETAK";
-      if (v.includes("REMBES")) return "REMBES";
-      return "NORMAL";
-    }
-  },
-  {
-    name: "Hasil Uji Tadel",
-    classes: ["VERY GOOD", "GOOD", "FAIR", "POOR", "CRITICAL"],
-    colors: { "VERY GOOD": "#3b82f6", "GOOD": "#10b981", "FAIR": "#fbbf24", "POOR": "#f87171", "CRITICAL": "#b91c1c" },
-    getValue: (r: { original: DBBushingRecord }) => {
-      const v = (r.original.hasil_uji_tandel || "").trim().toUpperCase();
-      if (v === "CRITICAL") return "CRITICAL";
-      if (v === "POOR") return "POOR";
-      if (v === "FAIR") return "FAIR";
-      if (v === "VERY GOOD") return "VERY GOOD";
-      return "GOOD"; // Fallback to GOOD because default Tadel score is 2-Good
-    }
-  },
-  {
-    name: "Kondisi Center Tap",
-    classes: ["NORMAL", "ANOMALI"],
-    colors: { "NORMAL": "#10b981", "ANOMALI": "#ef4444" },
-    getValue: (r: { original: DBBushingRecord; kondisi: string }) => {
-      const val = (r.original.kondisi_center_tap || "").trim().toUpperCase();
-      if (val === "ANOMALI") return "ANOMALI";
-      return "NORMAL";
-    }
-  }
+  { name: "Level Minyak", field: "level_minyak" },
+  { name: "Hasil Thermovisi", field: "hasil_thermovisi" },
+  { name: "Kondisi Fisik", field: "kondisi_fisik" },
+  { name: "Hasil Uji Tadel", field: "hasil_uji_tandel" },
+  { name: "Kondisi Center Tap", field: "kondisi_center_tap" }
 ];
 
 export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
@@ -374,26 +324,45 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
   const parameterChartOptions = useMemo(() => {
     return PARAMS_CONFIG.map(pc => {
       const countMap: Record<string, number> = {};
-      pc.classes.forEach(cls => { countMap[cls] = 0; });
       let total = 0;
 
       filteredRecords.forEach(r => {
         // Harus difilter khusus untuk bushing OIP, karena judulnya "Analisis Temuan per Parameter Uji (OIP)"
         const bCount = r.jenisBushingList.filter(b => b && b.trim().toUpperCase() === "OIP").length;
         if (bCount > 0) {
-          const cls = pc.getValue(r);
-          if (countMap[cls] !== undefined) {
-            countMap[cls] += bCount;
-            total += bCount;
-          }
+          let val = ((r.original as any)[pc.field] || "").trim().toUpperCase();
+          if (val === "" || val === "-") val = "TIDAK ADA DATA";
+          
+          countMap[val] = (countMap[val] || 0) + bCount;
+          total += bCount;
         }
       });
 
-      const slices = pc.classes.map(cls => ({
-        name: cls,
-        value: countMap[cls],
-        color: (pc.colors as unknown as Record<string, string>)[cls]
-      }));
+      const slices = Object.entries(countMap)
+        .filter(([_, count]) => count > 0)
+        .map(([name, count]) => {
+          let color: string | undefined = undefined;
+          if (name === "NORMAL" || name === "GOOD" || name === "VERY GOOD") color = "#10b981"; // Green
+          else if (name === "TIDAK ADA DATA") color = "#9ca3af"; // Gray
+          else if (name === "LOW" || name === "HOTSPOT" || name === "BOCOR" || name === "RETAK" || name === "PECAH" || name === "CRITICAL" || name === "ANOMALI") color = "#ef4444"; // Red
+          else if (name === "MEDIUM" || name === "REMBES" || name === "KOTOR" || name === "FAIR" || name === "POOR" || name === "KURANG JELAS") color = "#f59e0b"; // Orange
+          else color = "#3b82f6"; // Blue default for unknown categories
+
+          return {
+            name,
+            value: count,
+            color
+          };
+        });
+
+      // Sort slices: NORMAL first, TIDAK ADA DATA last, others in middle
+      slices.sort((a, b) => {
+        if (a.name === "NORMAL" || a.name === "GOOD") return -1;
+        if (b.name === "NORMAL" || b.name === "GOOD") return 1;
+        if (a.name === "TIDAK ADA DATA") return 1;
+        if (b.name === "TIDAK ADA DATA") return -1;
+        return b.value - a.value;
+      });
 
       return { param: pc.name, option: pieOption(t, slices), total };
     });
@@ -760,6 +729,16 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
               >
                 <Presentation className="h-4 w-4" /> Slide Deck
               </button>
+              <a
+                href="https://drive.google.com/drive/u/0/folders/1k5y1UNqWB7LouLqV8Cxm0aqp-6ytWTrz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-xs font-medium text-white hover:bg-blue-700 transition-colors border border-blue-700"
+                title="Buka Folder Google Drive"
+              >
+                <ExternalLink className="h-4 w-4" />
+                G-Drive
+              </a>
               <button
                 disabled={isExportingJpg}
                 onClick={async () => {

@@ -28,8 +28,8 @@ export function pieOption(t: ChartTheme, slices: Slice[]): EChartsOption {
   return {
     tooltip: { trigger: "item", ...tooltipPreset(t) },
     legend: {
-      orient: "vertical",
-      right: "0%",
+      orient: "horizontal",
+      left: "center",
       bottom: "0%",
       itemWidth: 8,
       itemHeight: 8,
@@ -40,10 +40,10 @@ export function pieOption(t: ChartTheme, slices: Slice[]): EChartsOption {
       {
         type: "pie",
         radius: ["35%", "55%"],
-        center: ["40%", "45%"],
+        center: ["50%", "40%"],
         // irisan sekecil apapun dijamin kebagian busur minimal 7° biar KELIHATAN
         minAngle: 7,
-        data: slices.map((s) => ({
+        data: slices.filter(s => s.value > 0).map((s) => ({
           name: s.name,
           value: s.value,
           itemStyle: { color: s.color, borderColor: t.border, borderWidth: 2 },

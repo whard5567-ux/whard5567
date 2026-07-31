@@ -393,46 +393,16 @@ export function ParetoView({ rows }: { rows: GgnRow[] }) {
         <ChartCard 
           title="Kategori Penyebab Gangguan" 
           badge={`${agg.total}`} 
-          className="rise rise-2 h-96 lg:col-span-2"
+          className="rise rise-2 min-h-96 lg:col-span-2"
         >
           <EChart key={`p-${t.key}`} option={pieOpt} />
         </ChartCard>
-        <ChartCard 
-          title="Gangguan per Unit" 
-          className="rise rise-3 h-96 lg:col-span-3"
-        >
-          <EChart key={`u-${t.key}`} option={unitOpt} />
-        </ChartCard>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3">
-        <ChartCard title="Rincian Kategori per Unit (Grouped)" className="rise rise-4 h-96">
-          <EChart key={`gu-${t.key}`} option={groupedUnitOpt} />
-        </ChartCard>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        <ChartCard 
-          title="Trend Gangguan Bulanan" 
-          className="rise rise-5 h-96"
-        >
-          <EChart key={`tr-${t.key}`} option={trendOpt} />
-        </ChartCard>
-        <ChartCard 
-          title="Trend Gangguan Year-on-Year" 
-          className="rise rise-6 h-96"
-        >
-          <EChart key={`yoy-${t.key}`} option={yoyOpt} />
-        </ChartCard>
-      </div>
-      </div>
-
-      {/* Tabel Heatmap Penyebab */}
-      <div className="grid grid-cols-1 gap-3">
-        <ChartCard title="Heatmap Penyebab Gangguan" className="rise rise-6">
-          <div className="overflow-x-auto overflow-y-hidden pb-2">
-            <table className="w-full text-center text-[13px] border-collapse">
-              <thead>
+        
+        {/* Heatmap Penyebab dipindah ke atas */}
+        <ChartCard title="Heatmap Penyebab Gangguan" className="rise rise-3 lg:col-span-3 min-h-96">
+          <div className="overflow-x-auto pb-2 scrollbar-thin">
+            <table className="w-full text-center text-[13px] border-collapse relative">
+              <thead className="sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th className="border border-edge bg-surface-2 p-2 text-left font-semibold text-ink uppercase tracking-wider" rowSpan={2}>Penyebab</th>
                   <th className="border border-edge bg-surface-2 p-2 font-semibold text-ink uppercase tracking-wider" colSpan={years.length}>Tahun</th>
@@ -468,7 +438,7 @@ export function ParetoView({ rows }: { rows: GgnRow[] }) {
                   );
                 })}
               </tbody>
-              <tfoot>
+              <tfoot className="sticky bottom-0 z-10 shadow-[0_-1px_2px_rgba(0,0,0,0.1)]">
                 <tr className="bg-surface-2 font-bold text-ink uppercase tracking-wider">
                   <td className="border border-edge p-2 text-left">TOTAL</td>
                   {years.map(y => (
@@ -479,6 +449,38 @@ export function ParetoView({ rows }: { rows: GgnRow[] }) {
               </tfoot>
             </table>
           </div>
+        </ChartCard>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3">
+        <ChartCard title="Rincian Kategori per Unit (Grouped)" className="rise rise-4 h-96">
+          <EChart key={`gu-${t.key}`} option={groupedUnitOpt} />
+        </ChartCard>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+        <ChartCard 
+          title="Trend Gangguan Bulanan" 
+          className="rise rise-5 h-96"
+        >
+          <EChart key={`tr-${t.key}`} option={trendOpt} />
+        </ChartCard>
+        <ChartCard 
+          title="Trend Gangguan Year-on-Year" 
+          className="rise rise-6 h-96"
+        >
+          <EChart key={`yoy-${t.key}`} option={yoyOpt} />
+        </ChartCard>
+      </div>
+      </div>
+
+      {/* Gangguan per unit dipindah ke bawah */}
+      <div className="grid grid-cols-1 gap-3">
+        <ChartCard 
+          title="Gangguan per Unit" 
+          className="rise rise-6 h-96"
+        >
+          <EChart key={`u-${t.key}`} option={unitOpt} />
         </ChartCard>
       </div>
 

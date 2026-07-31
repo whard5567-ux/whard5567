@@ -12,11 +12,23 @@ import { ChartCard } from "@/components/chart-card";
 import { EChart, useChartTheme } from "@/components/echart";
 import { pieOption, rankedBarOption, simpleBarOption, stackedBarOption } from "@/lib/echart-options";
 import { BigStat, Caption, pctColor } from "@/components/hero-primitives";
-import { ZoomIn, ZoomOut, Maximize, Presentation, Image as ImageIcon } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize, Presentation, Image as ImageIcon, Building2, Mountain, Anchor, Train, Landmark, Factory, TreePine, CloudRain } from "lucide-react";
 import { exportDashboardAsJpg } from "@/lib/export-image";
 import { Deck, DeckCover, DeckChartSlide, DeckContentSlide } from "@/components/slide-deck";
 
 const EMPTY: AboFilters = { upt: [], status: [], jenis_anomali: [], status_fix: [] };
+
+const getUptIcon = (uptName: string) => {
+  const name = uptName.toUpperCase();
+  if (name.includes("SALATIGA")) return Mountain;
+  if (name.includes("SEMARANG") || name.includes("CIREBON") || name.includes("PROBOLINGGO")) return Anchor;
+  if (name.includes("PURWOKERTO") || name.includes("MADIUN")) return Train;
+  if (name.includes("YOGYAKARTA") || name.includes("SURAKARTA") || name.includes("SOLO") || name.includes("MAGELANG")) return Landmark;
+  if (name.includes("KUDUS") || name.includes("KARAWANG") || name.includes("BEKASI") || name.includes("PULOGADUNG") || name.includes("SIDOARJO")) return Factory;
+  if (name.includes("BOGOR")) return CloudRain;
+  if (name.includes("BANDUNG") || name.includes("GARUT") || name.includes("MALANG")) return TreePine;
+  return Building2;
+};
 
 export function Abo2026View({ 
   rows, 
@@ -223,23 +235,38 @@ export function Abo2026View({
               const anomalyList = anomalies ? [...anomalies.entries()].sort((a, b) => b[1] - a[1]) : [];
               
               return (
-              <div key={u.name} className="space-y-2 border border-edge/40 bg-surface-1 rounded-xl p-4 shadow-sm hover:border-edge transition-colors">
-                <div className="flex justify-between text-[11px] font-medium px-1">
-                  <span className="text-ink truncate max-w-[140px]" title={u.name}>{u.name}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="num text-emerald-500">{u.close}<small className="ml-0.5 opacity-60 font-normal">C</small></span>
-                    <span className="num text-red-400">{u.open}<small className="ml-0.5 opacity-60 font-normal">O</small></span>
-                    <span className="bg-edge w-px h-2.5 mx-1" />
-                    <span className="num text-ink font-bold">{u.pct.toFixed(1)}%</span>
+              <div key={u.name} className="relative [text-shadow:none] bg-gradient-to-br from-blue-100 to-blue-50 text-slate-800 rounded-xl p-4 shadow-[5px_5px_0_0_#ef4444] border border-blue-200 mt-2 ml-2 mb-2 transition-transform hover:-translate-y-1 hover:shadow-[7px_7px_0_0_#ef4444]">
+                {/* Ribbon */}
+                <div className="absolute top-4 -left-3 bg-orange-500 text-white flex items-center justify-center w-10 h-8 shadow-sm rounded-r z-10">
+                  <div className="absolute -top-2 left-0 w-0 h-0 border-b-[8px] border-b-orange-800 border-l-[12px] border-l-transparent"></div>
+                  {(() => { const Icon = getUptIcon(u.name); return <Icon className="w-4 h-4" />; })()}
+                </div>
+
+                <div className="pl-8 flex justify-between items-start gap-2 text-[12px] font-bold">
+                  <span className="text-slate-800 leading-tight">{u.name}</span>
+                  <span className="text-orange-600 text-[14px] shrink-0">{u.pct.toFixed(1)}%</span>
+                </div>
+                
+                <div className="mt-3 flex items-center gap-4 text-[11px] font-medium pl-8">
+                  <div className="flex flex-col">
+                    <span className="text-slate-500">Close</span>
+                    <span className="text-emerald-600 font-bold text-sm">{u.close}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-slate-500">Open</span>
+                    <span className="text-red-500 font-bold text-sm">{u.open}</span>
                   </div>
                 </div>
-                <div className="h-2 bg-surface-2 rounded-full overflow-hidden flex">
+
+                <div className="mt-3 h-2 bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
                   <div className="h-full bg-emerald-500" style={{ width: `${u.pct}%` }} />
                   {u.total > 0 && <div className="h-full bg-red-400" style={{ width: `${100 - u.pct}%` }} />}
                 </div>
+
                 {anomalyList.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2 px-1">
-                    {anomalyList.map(([ano, count]) => {
+                  <div className="flex flex-col gap-1.5 mt-3 pt-3 border-t border-blue-200/60">
+                    <span className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">Anomali Terbanyak</span>
+                    {anomalyList.map(([ano]) => {
                       const statuses = agg.byUptAnomaliStatus?.get(u.name)?.get(ano);
                       let c = 0, o = 0;
                       if (statuses) {
@@ -250,14 +277,14 @@ export function Abo2026View({
                       }
                       
                       return (
-                        <div key={ano} className="flex items-stretch text-[9px] rounded bg-surface-2 border border-edge/50 overflow-hidden">
-                          <span className="px-1.5 py-0.5 text-ink-3 flex items-center" title={ano}>
+                        <div key={ano} className="flex items-stretch text-[10px] rounded bg-gradient-to-r from-blue-50 to-blue-100/80 border border-blue-200/60 overflow-hidden">
+                          <span className="px-2 py-1.5 text-slate-700 flex items-center font-medium flex-1 leading-snug">
                             {ano}
                           </span>
-                          <span className="flex items-center px-1.5 py-0.5 bg-surface-solid border-l border-edge/50 shrink-0">
-                            <span className="text-emerald-500 font-bold" title="Close">{c}</span>
-                            <span className="text-ink-3 mx-0.5">/</span>
-                            <span className="text-red-400 font-bold" title="Open">{o}</span>
+                          <span className="flex items-center px-2 py-1.5 bg-gradient-to-br from-blue-100 to-blue-200/50 border-l border-blue-200/60 shrink-0">
+                            <span className="text-emerald-600 font-bold" title="Close">{c}</span>
+                            <span className="text-slate-400 mx-1">/</span>
+                            <span className="text-red-500 font-bold" title="Open">{o}</span>
                           </span>
                         </div>
                       );
@@ -359,23 +386,38 @@ export function Abo2026View({
                         const anomalyList = anomalies ? [...anomalies.entries()].sort((a, b) => b[1] - a[1]) : [];
                         
                         return (
-                        <div key={u.name} className="space-y-2 border border-edge/40 bg-surface-1 rounded-xl p-4 shadow-sm">
-                          <div className="flex justify-between text-[11px] font-medium px-1">
-                            <span className="text-ink truncate max-w-[140px]" title={u.name}>{u.name}</span>
-                            <div className="flex items-center gap-3">
-                              <span className="num text-emerald-500">{u.close}<small className="ml-0.5 opacity-60 font-normal">C</small></span>
-                              <span className="num text-red-400">{u.open}<small className="ml-0.5 opacity-60 font-normal">O</small></span>
-                              <span className="bg-edge w-px h-2.5 mx-1" />
-                              <span className="num text-ink font-bold">{u.pct.toFixed(1)}%</span>
+                        <div key={u.name} className="relative [text-shadow:none] bg-gradient-to-br from-blue-100 to-blue-50 text-slate-800 rounded-xl p-4 shadow-[5px_5px_0_0_#ef4444] border border-blue-200 mt-2 ml-2 mb-2 transition-transform hover:-translate-y-1 hover:shadow-[7px_7px_0_0_#ef4444]">
+                          {/* Ribbon */}
+                          <div className="absolute top-4 -left-3 bg-orange-500 text-white flex items-center justify-center w-10 h-8 shadow-sm rounded-r z-10">
+                            <div className="absolute -top-2 left-0 w-0 h-0 border-b-[8px] border-b-orange-800 border-l-[12px] border-l-transparent"></div>
+                            {(() => { const Icon = getUptIcon(u.name); return <Icon className="w-4 h-4" />; })()}
+                          </div>
+
+                          <div className="pl-8 flex justify-between items-start gap-2 text-[12px] font-bold">
+                            <span className="text-slate-800 leading-tight">{u.name}</span>
+                            <span className="text-orange-600 text-[14px] shrink-0">{u.pct.toFixed(1)}%</span>
+                          </div>
+                          
+                          <div className="mt-3 flex items-center gap-4 text-[11px] font-medium pl-8">
+                            <div className="flex flex-col">
+                              <span className="text-slate-500">Close</span>
+                              <span className="text-emerald-600 font-bold text-sm">{u.close}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-slate-500">Open</span>
+                              <span className="text-red-500 font-bold text-sm">{u.open}</span>
                             </div>
                           </div>
-                          <div className="h-2 bg-surface-2 rounded-full overflow-hidden flex">
+
+                          <div className="mt-3 h-2 bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
                             <div className="h-full bg-emerald-500" style={{ width: `${u.pct}%` }} />
                             {u.total > 0 && <div className="h-full bg-red-400" style={{ width: `${100 - u.pct}%` }} />}
                           </div>
+
                           {anomalyList.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-2 px-1">
-                              {anomalyList.map(([ano, count]) => {
+                            <div className="flex flex-col gap-1.5 mt-3 pt-3 border-t border-blue-200/60">
+                              <span className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">Anomali Terbanyak</span>
+                              {anomalyList.map(([ano]) => {
                                 const statuses = agg.byUptAnomaliStatus?.get(u.name)?.get(ano);
                                 let c = 0, o = 0;
                                 if (statuses) {
@@ -386,14 +428,14 @@ export function Abo2026View({
                                 }
                                 
                                 return (
-                                  <div key={ano} className="flex items-stretch text-[9px] rounded bg-surface-2 border border-edge/50 overflow-hidden">
-                                    <span className="px-1.5 py-0.5 text-ink-3 flex items-center" title={ano}>
+                                  <div key={ano} className="flex items-stretch text-[10px] rounded bg-gradient-to-r from-blue-50 to-blue-100/80 border border-blue-200/60 overflow-hidden">
+                                    <span className="px-2 py-1.5 text-slate-700 flex items-center font-medium flex-1 leading-snug">
                                       {ano}
                                     </span>
-                                    <span className="flex items-center px-1.5 py-0.5 bg-surface-solid border-l border-edge/50 shrink-0">
-                                      <span className="text-emerald-500 font-bold" title="Close">{c}</span>
-                                      <span className="text-ink-3 mx-0.5">/</span>
-                                      <span className="text-red-400 font-bold" title="Open">{o}</span>
+                                    <span className="flex items-center px-2 py-1.5 bg-gradient-to-br from-blue-100 to-blue-200/50 border-l border-blue-200/60 shrink-0">
+                                      <span className="text-emerald-600 font-bold" title="Close">{c}</span>
+                                      <span className="text-slate-400 mx-1">/</span>
+                                      <span className="text-red-500 font-bold" title="Open">{o}</span>
                                     </span>
                                   </div>
                                 );

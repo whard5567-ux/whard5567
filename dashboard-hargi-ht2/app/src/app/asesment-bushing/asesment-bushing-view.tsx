@@ -40,7 +40,6 @@ const PARAMS_CONFIG = [
   { name: "Level Minyak", field: "level_minyak" },
   { name: "Hasil Thermovisi", field: "hasil_thermovisi" },
   { name: "Kondisi Fisik", field: "kondisi_fisik" },
-  { name: "Hasil Uji Tadel", field: "hasil_uji_tandel" },
   { name: "Kondisi Center Tap", field: "kondisi_center_tap" }
 ];
 

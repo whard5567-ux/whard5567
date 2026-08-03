@@ -18,13 +18,14 @@ export function MtuView({ rows }: { rows: MtuRow[] }) {
   const [mtu, setMtu] = useState<string[]>([]);
   const [pabrikan, setPabrikan] = useState<string[]>([]);
   const [progresSaatIni, setProgresSaatIni] = useState<string[]>([]);
+  const [statusPeruntukan, setStatusPeruntukan] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [isExportingJpg, setIsExportingJpg] = useState(false);
 
   const available = useMemo(() => mtuAvailableFilters(rows), [rows]);
   const filtered = useMemo(
-    () => mtuFilterRows(rows, { upt, gardu_induk: garduInduk, mtu, pabrikan, progres_saat_ini: progresSaatIni, search }),
-    [rows, upt, garduInduk, mtu, pabrikan, progresSaatIni, search]
+    () => mtuFilterRows(rows, { upt, gardu_induk: garduInduk, mtu, pabrikan, progres_saat_ini: progresSaatIni, status_peruntukan: statusPeruntukan, search }),
+    [rows, upt, garduInduk, mtu, pabrikan, progresSaatIni, statusPeruntukan, search]
   );
   const agg = useMemo(() => mtuAggregate(filtered), [filtered]);
 
@@ -225,6 +226,12 @@ export function MtuView({ rows }: { rows: MtuRow[] }) {
           options={available.progres_saat_ini}
           selected={progresSaatIni}
           onChange={setProgresSaatIni}
+        />
+        <MultiSelect
+          label="Status Peruntukan"
+          options={available.status_peruntukan}
+          selected={statusPeruntukan}
+          onChange={setStatusPeruntukan}
         />
         <div className="relative max-w-sm flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" />

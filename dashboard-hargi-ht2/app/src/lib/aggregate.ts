@@ -484,6 +484,7 @@ export type MtuFilters = {
   mtu: string[];
   pabrikan: string[];
   progres_saat_ini: string[];
+  status_peruntukan: string[];
   search?: string;
 };
 
@@ -495,6 +496,7 @@ export function mtuAvailableFilters(rows: MtuRow[]): MtuFilters {
     mtu: uniq(rows.map((r) => r.mtu)),
     pabrikan: uniq(rows.map((r) => r.pabrikan)),
     progres_saat_ini: uniq(rows.map((r) => r.progres_saat_ini)),
+    status_peruntukan: uniq(rows.map((r) => r.status_peruntukan)),
   };
 }
 
@@ -507,6 +509,7 @@ export function mtuFilterRows(rows: MtuRow[], f: MtuFilters): MtuRow[] {
       (f.mtu.length === 0 || f.mtu.includes(r.mtu)) &&
       (f.pabrikan.length === 0 || f.pabrikan.includes(r.pabrikan)) &&
       (f.progres_saat_ini.length === 0 || f.progres_saat_ini.includes(r.progres_saat_ini)) &&
+      (f.status_peruntukan.length === 0 || f.status_peruntukan.includes(r.status_peruntukan)) &&
       (!q ||
         (r.prk || "").toLowerCase().includes(q) ||
         (r.gardu_induk || "").toLowerCase().includes(q) ||

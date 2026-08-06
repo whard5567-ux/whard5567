@@ -16,7 +16,7 @@ export default async function AsesmentBushingPage() {
   const [row] = (await sql`
     select 
       (select coalesce(jsonb_agg(x order by x.id), '[]'::jsonb) from (
-         select id, no, nama_upt, gardu_induk, bay_penghantar, merk, tipe, tgl_oprs,
+         select id, no, nama_upt, ultg, gardu_induk, bay_penghantar, bulan, merk, tipe, tgl_oprs,
                 thn_buat, usia, fasa, merk_bushing, type_bushing, no_seri, jenis_bushing,
                 level_minyak, hasil_thermovisi, kondisi_fisik, nilai_tadel, hasil_uji_tandel,
                 kondisi_center_tap, keterangan

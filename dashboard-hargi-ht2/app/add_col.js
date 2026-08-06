@@ -12,8 +12,8 @@ async function run() {
   try {
     await sql`
       alter table hargi_ht2.asesment_bushing
-        add column if not exists hasil_uji_tandel text,
-        add column if not exists kondisi_center_tap text`;
+        add column if not exists ultg text,
+        add column if not exists bulan text;`
     console.log('Columns added successfully!');
   } catch (e) {
     console.error(e);

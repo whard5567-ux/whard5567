@@ -49,7 +49,7 @@ export function tooltipPreset(t: ChartTheme) {
   };
 }
 
-export function EChart({ option, className = "" }: { option: EChartsOption; className?: string }) {
+export function EChart({ option, className = "", onEvents }: { option: EChartsOption; className?: string; onEvents?: Record<string, Function> }) {
   return (
     <ReactECharts
       option={option}
@@ -58,6 +58,7 @@ export function EChart({ option, className = "" }: { option: EChartsOption; clas
       style={{ width: "100%", height: "100%" }}
       className={className}
       opts={{ renderer: "canvas" }}
+      onEvents={onEvents}
     />
   );
 }

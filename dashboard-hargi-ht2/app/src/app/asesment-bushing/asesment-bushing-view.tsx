@@ -15,8 +15,10 @@ export interface DBBushingRecord {
   id: number;
   no: string;
   nama_upt: string;
+  ultg: string;
   gardu_induk: string;
   bay_penghantar: string;
+  bulan: string;
   merk: string;
   tipe: string;
   tgl_oprs: string;
@@ -48,6 +50,7 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
   
   // States Filter
   const [uptFilter, setUptFilter] = useState<string[]>([]);
+  const [ultgFilter, setUltgFilter] = useState<string[]>([]);
   const [jenisBushingFilter, setJenisBushingFilter] = useState<string[]>([]);
   const [tahunFilter, setTahunFilter] = useState<string[]>([]);
   const [kondisiFilter, setKondisiFilter] = useState<string[]>([]);
@@ -159,6 +162,7 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
         id: `BSH-${String(r.id).padStart(3, "0")}`,
         dbId: r.id,
         upt: r.nama_upt,
+        ultg: r.ultg,
         garduInduk: r.gardu_induk,
         bayTrafo: r.bay_penghantar,
         fasa: (r.fasa || "-").trim(),
@@ -180,31 +184,49 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
   }, [rows]);
 
   const uptOptions = useMemo(() => Array.from(new Set(records.map(r => r.upt))).sort(), [records]);
+  const ultgOptions = useMemo(() => Array.from(new Set(records.map(r => r.ultg).filter(x => x && x !== "-"))).sort(), [records]);
   const jenisBushingOptions = useMemo(() => {
     const all = records.flatMap(r => r.jenisBushingList).filter(x => x && x !== "-");
     return Array.from(new Set(all)).sort();
   }, [records]);
   const tahunOptions = useMemo(() => Array.from(new Set(records.map(r => r.tahunBuat))).sort(), [records]);
   const kondisiOptions = ["Very Good", "Good", "Fair", "Poor", "Critical"];
-  
-  const levelMinyakOptions = useMemo(() => Array.from(new Set(records.map(r => (r.original.level_minyak || "").trim()).filter(x => x && x !== "-"))).sort(), [records]);
-  const thermovisiOptions = useMemo(() => Array.from(new Set(records.map(r => (r.original.hasil_thermovisi || "").trim()).filter(x => x && x !== "-"))).sort(), [records]);
-  const kondisiFisikOptions = useMemo(() => Array.from(new Set(records.map(r => (r.original.kondisi_fisik || "").trim()).filter(x => x && x !== "-"))).sort(), [records]);
-  const nilaiTadelOptions = useMemo(() => Array.from(new Set(records.map(r => (r.original.nilai_tadel || "").trim()).filter(x => x && x !== "-"))).sort(), [records]);
-  const centerTapOptions = useMemo(() => Array.from(new Set(records.map(r => (r.original.kondisi_center_tap || "").trim()).filter(x => x && x !== "-"))).sort(), [records]);
+  const getParamOptions = (field: string) => {
+    const raw = Array.from(new Set(records.map(r => ((r.original as any)[field] || "").trim())));
+    const hasNoData = raw.some(x => x === "" || x === "-");
+    const valid = raw.filter(x => x && x !== "-").sort();
+    if (hasNoData) valid.push("TIDAK ADA DATA");
+    return valid;
+  };
+
+  const levelMinyakOptions = useMemo(() => getParamOptions("level_minyak"), [records]);
+  const thermovisiOptions = useMemo(() => getParamOptions("hasil_thermovisi"), [records]);
+  const kondisiFisikOptions = useMemo(() => getParamOptions("kondisi_fisik"), [records]);
+  const nilaiTadelOptions = useMemo(() => getParamOptions("nilai_tadel"), [records]);
+  const centerTapOptions = useMemo(() => getParamOptions("kondisi_center_tap"), [records]);
 
   const filteredRecords = useMemo(() => {
     return records.filter((r) => {
       const matchUpt = uptFilter.length === 0 || uptFilter.includes(r.upt);
+      const matchUltg = ultgFilter.length === 0 || ultgFilter.includes(r.ultg);
       const matchJenis = jenisBushingFilter.length === 0 || jenisBushingFilter.some(f => r.jenisBushingList.includes(f));
       const matchTahun = tahunFilter.length === 0 || tahunFilter.includes(r.tahunBuat);
       const matchKondisi = kondisiFilter.length === 0 || kondisiFilter.includes(r.kondisi.replace(/^\d-/, ""));
       
-      const matchLevelMinyak = levelMinyakFilter.length === 0 || levelMinyakFilter.includes((r.original.level_minyak || "").trim());
-      const matchThermovisi = thermovisiFilter.length === 0 || thermovisiFilter.includes((r.original.hasil_thermovisi || "").trim());
-      const matchKondisiFisik = kondisiFisikFilter.length === 0 || kondisiFisikFilter.includes((r.original.kondisi_fisik || "").trim());
-      const matchNilaiTadel = nilaiTadelFilter.length === 0 || nilaiTadelFilter.includes((r.original.nilai_tadel || "").trim());
-      const matchCenterTap = centerTapFilter.length === 0 || centerTapFilter.includes((r.original.kondisi_center_tap || "").trim());
+      const checkVal = (filterArr: string[], valRaw: string) => {
+        if (filterArr.length === 0) return true;
+        const val = (valRaw || "").trim().toUpperCase();
+        return filterArr.some(f => {
+          if (f.toUpperCase() === "TIDAK ADA DATA") return val === "" || val === "-";
+          return val === f.toUpperCase();
+        });
+      };
+      
+      const matchLevelMinyak = checkVal(levelMinyakFilter, r.original.level_minyak);
+      const matchThermovisi = checkVal(thermovisiFilter, r.original.hasil_thermovisi);
+      const matchKondisiFisik = checkVal(kondisiFisikFilter, r.original.kondisi_fisik);
+      const matchNilaiTadel = checkVal(nilaiTadelFilter, r.original.nilai_tadel);
+      const matchCenterTap = checkVal(centerTapFilter, r.original.kondisi_center_tap);
       
       const searchLower = searchQuery.toLowerCase();
       const matchSearch = searchQuery === "" || 
@@ -213,9 +235,9 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
         r.id.toLowerCase().includes(searchLower) ||
         r.parameterUji.toLowerCase().includes(searchLower);
 
-      return matchUpt && matchJenis && matchTahun && matchKondisi && matchLevelMinyak && matchThermovisi && matchKondisiFisik && matchNilaiTadel && matchCenterTap && matchSearch;
+      return matchUpt && matchUltg && matchJenis && matchTahun && matchKondisi && matchLevelMinyak && matchThermovisi && matchKondisiFisik && matchNilaiTadel && matchCenterTap && matchSearch;
     });
-  }, [records, uptFilter, jenisBushingFilter, tahunFilter, kondisiFilter, levelMinyakFilter, thermovisiFilter, kondisiFisikFilter, nilaiTadelFilter, centerTapFilter, searchQuery]);
+  }, [records, uptFilter, ultgFilter, jenisBushingFilter, tahunFilter, kondisiFilter, levelMinyakFilter, thermovisiFilter, kondisiFisikFilter, nilaiTadelFilter, centerTapFilter, searchQuery]);
 
   // Aggregate Stats
   const stats = useMemo(() => {
@@ -263,6 +285,7 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
   // Reset Filters
   const handleResetFilters = () => {
     setUptFilter([]);
+    setUltgFilter([]);
     setJenisBushingFilter([]);
     setTahunFilter([]);
     setKondisiFilter([]);
@@ -272,6 +295,31 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
     setNilaiTadelFilter([]);
     setCenterTapFilter([]);
     setSearchQuery("");
+  };
+
+  // Handle click pada Pie Chart Parameter
+  const handleChartClick = (param: string, value: string) => {
+    const setterMap: Record<string, React.Dispatch<React.SetStateAction<string[]>>> = {
+      "Level Minyak": setLevelMinyakFilter,
+      "Hasil Thermovisi": setThermovisiFilter,
+      "Kondisi Fisik": setKondisiFisikFilter,
+      "Kondisi Center Tap": setCenterTapFilter,
+    };
+    
+    const setter = setterMap[param];
+    if (setter) {
+      setter(prev => {
+        if (prev.includes(value)) return prev.filter(x => x !== value);
+        return [...prev, value];
+      });
+      
+      // Karena chart parameter uji ini HANYA untuk Bushing OIP, 
+      // pastikan tabel juga terfilter untuk menampilkan jenis OIP saja
+      setJenisBushingFilter(["OIP"]);
+
+      setActiveTab("data");
+      setShowDeck(false);
+    }
   };
 
   // ECharts: Sebaran Jenis Bushing per UPT (Grouped Bar)
@@ -312,7 +360,49 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
       t, 
       upts.map(u => u.replace("UPT ", "")), 
       series,
-      { rotateLabel: 35 }
+      { rotateLabel: 35, legendPosition: "bottom" }
+    );
+  }, [filteredRecords, t]);
+
+  // ECharts: Sebaran Jenis Bushing per ULTG (Grouped Bar)
+  const ultgTotalChartOption = useMemo(() => {
+    const ultgs = Array.from(new Set(filteredRecords.map(r => r.ultg).filter(x => x && x !== "-"))).sort();
+    
+    // Dapatkan daftar unik jenis bushing dari data yang terfilter
+    const jenisSet = new Set<string>();
+    filteredRecords.forEach(r => r.jenisBushingList.forEach(j => {
+      if (j !== "-") jenisSet.add(j);
+    }));
+    const jenisArr = Array.from(jenisSet).sort();
+
+    const palette = [
+      "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", 
+      "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16"
+    ];
+
+    const series = jenisArr.map((jenis, i) => {
+      return {
+        name: jenis,
+        data: ultgs.map((u) => {
+          let count = 0;
+          filteredRecords.forEach(r => {
+            if (r.ultg === u) {
+              r.jenisBushingList.forEach(j => {
+                if (j === jenis) count++;
+              });
+            }
+          });
+          return count;
+        }),
+        color: palette[i % palette.length]
+      };
+    });
+
+    return groupedBarOption(
+      t, 
+      ultgs.map(u => u.replace("ULTG ", "")), 
+      series,
+      { rotateLabel: 35, legendPosition: "bottom" }
     );
   }, [filteredRecords, t]);
 
@@ -444,6 +534,7 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
       <table className="w-full text-left text-[11px] whitespace-nowrap">
         <thead className="sticky top-0 bg-surface-solid z-10">
           <tr className="border-b border-edge font-bold text-ink-3 uppercase tracking-wider">
+            <th className="px-3 py-2">ULTG</th>
             <th className="px-3 py-2">Gardu Induk</th>
             <th className="px-3 py-2">Bay</th>
             <th className="px-3 py-2">Thn Buat</th>
@@ -461,6 +552,7 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
         <tbody>
           {filteredRecords.slice(0, 100).map((r, i) => (
             <tr key={i} className="border-b border-edge/40 hover:bg-surface-2 transition-colors">
+              <td className="px-3 py-1.5">{r.ultg || "-"}</td>
               <td className="px-3 py-1.5 font-bold">{r.garduInduk}</td>
               <td className="px-3 py-1.5">{r.bayTrafo}</td>
               <td className="px-3 py-1.5">{r.original.thn_buat || "-"}</td>
@@ -518,12 +610,19 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
             <div className="flex flex-col gap-8 w-full max-w-6xl pb-16">
               
               {/* Row 1: KPI overview */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
                 <ChartCard title="Sebaran Jenis Bushing per UPT" className="min-h-[300px] lg:h-[22rem]">
                   {stats.total === 0 ? (
                     <div className="flex h-full items-center justify-center text-xs text-ink-3">Tidak ada data</div>
                   ) : (
                     <EChart key={`s-upt-pie-${t.key}`} option={uptTotalChartOption} />
+                  )}
+                </ChartCard>
+                <ChartCard title="Sebaran Jenis Bushing per ULTG" className="min-h-[300px] lg:h-[22rem]">
+                  {stats.total === 0 ? (
+                    <div className="flex h-full items-center justify-center text-xs text-ink-3">Tidak ada data</div>
+                  ) : (
+                    <EChart key={`s-ultg-bar-${t.key}`} option={ultgTotalChartOption} />
                   )}
                 </ChartCard>
                 <ChartCard title="Klasifikasi Usia Bushing" className="min-h-[300px] lg:h-[22rem]">
@@ -549,7 +648,13 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
                               {pc.param} ({pc.total})
                             </div>
                             <div className="flex-1 w-full relative">
-                              <EChart key={`s-param-${pc.param}-${t.key}`} option={pc.option} />
+                              <EChart 
+                                key={`s-param-${pc.param}-${t.key}`} 
+                                option={pc.option} 
+                                onEvents={{
+                                  click: (params: any) => handleChartClick(pc.param, params.name)
+                                }}
+                              />
                               {pc.total === 0 && (
                                 <div className="absolute inset-0 flex items-center justify-center text-[9px] text-ink-3 text-center pointer-events-none">
                                   Tidak ada temuan
@@ -630,7 +735,7 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
         )
       }
     ];
-  }, [filteredRecords, stats, t, uptTotalChartOption, parameterChartOptions, jenisChartOption, merkChartOption, rincianTable, usiaChartOption]);
+  }, [filteredRecords, stats, t, uptTotalChartOption, ultgTotalChartOption, parameterChartOptions, jenisChartOption, merkChartOption, rincianTable, usiaChartOption]);
 
   const filterControls = (
     <>
@@ -639,6 +744,12 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
         options={uptOptions}
         selected={uptFilter}
         onChange={setUptFilter}
+      />
+      <MultiSelect
+        label="ULTG"
+        options={ultgOptions}
+        selected={ultgFilter}
+        onChange={setUltgFilter}
       />
       <MultiSelect
         label="Jenis Bushing"
@@ -729,7 +840,7 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
                 <Presentation className="h-4 w-4" /> Slide Deck
               </button>
               <a
-                href="https://drive.google.com/drive/u/0/folders/1k5y1UNqWB7LouLqV8Cxm0aqp-6ytWTrz"
+                href="https://drive.google.com/drive/u/0/folders/1iT2M1ZGuzNtPXeOv0KVEzyLNY_L7tKT-"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-xs font-medium text-white hover:bg-blue-700 transition-colors border border-blue-700"
@@ -890,6 +1001,17 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
               )}
             </ChartCard>
 
+            {/* Chart 1b: Sebaran ULTG */}
+            <ChartCard title="Sebaran Jenis Bushing per ULTG" className="h-[300px] md:h-80 col-span-1">
+              {stats.total === 0 ? (
+                <div className="flex h-full flex-col items-center justify-center text-ink-3 text-xs">
+                  Tidak ada data untuk filter saat ini.
+                </div>
+              ) : (
+                <EChart key={`ultg-bar-${t.key}`} option={ultgTotalChartOption} />
+              )}
+            </ChartCard>
+
             {/* Chart 2: Klasifikasi Usia Bushing */}
             <ChartCard title="Klasifikasi Usia Bushing" className="h-80 col-span-1">
               {stats.total === 0 ? (
@@ -938,7 +1060,13 @@ export function AsesmentBushingView({ rows }: { rows: DBBushingRecord[] }) {
                         <span className="ml-1 text-ink-3">({pc.total})</span>
                       </div>
                       <div className="flex-1 w-full relative">
-                        <EChart key={`param-${pc.param}-${t.key}`} option={pc.option} />
+                        <EChart 
+                          key={`param-${pc.param}-${t.key}`} 
+                          option={pc.option} 
+                          onEvents={{
+                            click: (params: any) => handleChartClick(pc.param, params.name)
+                          }}
+                        />
                         {pc.total === 0 && (
                           <div className="absolute inset-0 flex items-center justify-center text-[10px] text-ink-3 text-center pointer-events-none">
                             Tidak ada temuan

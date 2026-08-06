@@ -184,7 +184,7 @@ function mapAsesmentBushing(rows: string[][]) {
   if (rows.length <= 1) return [];
   const dataRows = rows.slice(1);
   return dataRows
-    .filter((r) => r.length >= 21 && clean(r[1]) !== "" && clean(r[1]).toUpperCase() !== "NAMAUPT")
+    .filter((r) => r.length >= 23 && clean(r[1]) !== "" && clean(r[1]).toUpperCase() !== "NAMAUPT")
     .map((r) => {
       const rawObj: Record<string, string> = {};
       r.forEach((val, idx) => {
@@ -193,25 +193,27 @@ function mapAsesmentBushing(rows: string[][]) {
       return {
         no: clean(r[0]),
         nama_upt: clean(r[1]),
-        gardu_induk: clean(r[2]),
-        bay_penghantar: clean(r[3]),
-        merk: clean(r[4]),
-        tipe: clean(r[5]),
-        tgl_oprs: clean(r[6]),
-        thn_buat: clean(r[7]),
-        usia: clean(r[8]),
-        fasa: clean(r[9]),
-        merk_bushing: clean(r[10]),
-        type_bushing: clean(r[11]),
-        no_seri: clean(r[12]),
-        jenis_bushing: clean(r[13]),
-        level_minyak: clean(r[14]),
-        hasil_thermovisi: clean(r[15]),
-        kondisi_fisik: clean(r[16]),
-        nilai_tadel: clean(r[17]),
-        hasil_uji_tandel: clean(r[18]),
-        kondisi_center_tap: clean(r[19]),
-        keterangan: clean(r[20]),
+        ultg: clean(r[2]),
+        gardu_induk: clean(r[3]),
+        bay_penghantar: clean(r[4]),
+        bulan: clean(r[5]),
+        merk: clean(r[6]),
+        tipe: clean(r[7]),
+        tgl_oprs: clean(r[8]),
+        thn_buat: clean(r[9]),
+        usia: clean(r[10]),
+        fasa: clean(r[11]),
+        merk_bushing: clean(r[12]),
+        type_bushing: clean(r[13]),
+        no_seri: clean(r[14]),
+        jenis_bushing: clean(r[15]),
+        level_minyak: clean(r[16]),
+        hasil_thermovisi: clean(r[17]),
+        kondisi_fisik: clean(r[18]),
+        nilai_tadel: clean(r[19]),
+        hasil_uji_tandel: clean(r[20]),
+        kondisi_center_tap: clean(r[21]),
+        keterangan: clean(r[22]),
         raw: rawObj,
       };
     });

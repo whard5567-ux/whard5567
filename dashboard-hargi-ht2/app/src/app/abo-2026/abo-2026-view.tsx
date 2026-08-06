@@ -142,7 +142,23 @@ export function Abo2026View({
         color: "#f87171"
       }
     ],
-    { horizontal: true }
+    {
+      horizontal: true,
+      totals: anomaliLabels.map(l => {
+        const conds = agg.byAnomaliStatus.get(l);
+        let close = 0;
+        let open = 0;
+        if (conds) {
+          for (const [status, count] of conds.entries()) {
+            if (status.toUpperCase() === "CLOSE") close += count;
+            else open += count;
+          }
+        }
+        const total = close + open;
+        const pct = total > 0 ? Math.round((close / total) * 100) : 0;
+        return `${total} (${pct}%)`;
+      })
+    }
   );
 
   return (

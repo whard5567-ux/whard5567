@@ -75,7 +75,7 @@ export function stackedBarOption(
   t: ChartTheme,
   categories: string[],
   series: StackSeries[],
-  opts: { horizontal?: boolean; totals?: number[]; legendTop?: boolean; showAllLabels?: boolean } = {},
+  opts: { horizontal?: boolean; totals?: (number | string)[]; legendTop?: boolean; showAllLabels?: boolean } = {},
 ): EChartsOption {
   const { horizontal = false, totals, legendTop = true, showAllLabels = false } = opts;
   const valueAxis = {
@@ -111,7 +111,7 @@ export function stackedBarOption(
       textStyle: { color: t.tick, fontSize: 10 },
       pageTextStyle: { color: t.tick, fontSize: 10 },
     },
-    grid: { left: 8, right: totals && horizontal ? 36 : (legendTop ? 20 : 85), top: legendTop ? 28 : 12, bottom: 8, containLabel: true },
+    grid: { left: 8, right: totals && horizontal ? 65 : (legendTop ? 20 : 85), top: legendTop ? 28 : 12, bottom: 8, containLabel: true },
     xAxis: horizontal ? valueAxis : catAxis,
     yAxis: horizontal ? { ...catAxis, inverse: true } : valueAxis,
     series: [
@@ -209,7 +209,7 @@ export function lineOption(t: ChartTheme, xLabels: string[], series: LineSeries[
       type: "category",
       data: xLabels,
       boundaryGap: false,
-      axisLabel: { color: t.tick, fontSize: FONT_LABEL },
+      axisLabel: { color: t.tick, fontSize: FONT_LABEL, interval: 0 as const, rotate: xLabels.length > 10 ? 35 : 0 },
       axisLine: { lineStyle: { color: t.grid } },
     },
     yAxis: {
@@ -367,9 +367,9 @@ export function groupedBarOption(
   t: ChartTheme,
   categories: string[],
   series: StackSeries[],
-  opts: { horizontal?: boolean; rotateLabel?: number } = {},
+  opts: { horizontal?: boolean; rotateLabel?: number; legendPosition?: "right" | "bottom" | "top" } = {},
 ): EChartsOption {
-  const { horizontal = false, rotateLabel } = opts;
+  const { horizontal = false, rotateLabel, legendPosition = "right" } = opts;
   const catAxis = {
     type: "category" as const,
     data: categories,
@@ -389,18 +389,31 @@ export function groupedBarOption(
     axisLabel: { color: t.tick, fontSize: FONT_LABEL },
     splitLine: { lineStyle: { color: t.grid } },
   };
+  
+  const isBottom = legendPosition === "bottom";
+  const isTop = legendPosition === "top";
+
   return {
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, formatter: axisTooltipNoZero, ...tooltipPreset(t) },
     legend: {
-      orient: "vertical",
-      right: "0%",
-      top: "middle",
+      type: "scroll",
+      orient: isBottom || isTop ? "horizontal" : "vertical",
+      right: isBottom || isTop ? undefined : "0%",
+      left: isBottom || isTop ? "center" : undefined,
+      top: isTop ? "0%" : (isBottom ? undefined : "middle"),
+      bottom: isBottom ? "0%" : undefined,
       itemWidth: 16,
       itemHeight: 8,
       textStyle: { color: t.tick, fontSize: 10 },
       pageTextStyle: { color: t.tick, fontSize: 10 },
     },
-    grid: { left: 8, right: horizontal ? 110 : 95, top: 12, bottom: 8, containLabel: true },
+    grid: { 
+      left: 8, 
+      right: isBottom || isTop ? 8 : (horizontal ? 110 : 95), 
+      top: isTop ? 32 : 12, 
+      bottom: isBottom ? 32 : 8, 
+      containLabel: true 
+    },
     xAxis: horizontal ? valAxis : catAxis,
     yAxis: horizontal ? { ...catAxis, inverse: true } : valAxis,
     series: series.map((s) => ({

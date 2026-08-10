@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { UploadModal } from "./upload-modal";
 import { Folder, FileText, FileImage, FileSpreadsheet, Download, Trash2, Search, Filter, Plus, Eye } from "lucide-react";
@@ -24,14 +24,54 @@ const FILES = [
 export default function PenyimpananDokumenPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [activeFolder, setActiveFolder] = useState<number | null>(null);
+  const [driveFiles, setDriveFiles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const getFileIcon = (type: string) => {
-    switch (type) {
-      case "pdf": return <FileText className="h-5 w-5 text-red-400" />;
-      case "xls": return <FileSpreadsheet className="h-5 w-5 text-green-400" />;
-      case "img": return <FileImage className="h-5 w-5 text-purple-400" />;
-      default: return <FileText className="h-5 w-5 text-blue-400" />;
-    }
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try {
+        const res = await fetch("/api/list-drive");
+        const data = await res.json().catch(() => null);
+        
+        if (!res.ok) {
+          throw new Error(data?.error || data?.details || "Gagal mengambil data dari server");
+        }
+        
+        if (data && data.success) {
+          setDriveFiles(data.files);
+        } else {
+          throw new Error(data?.error || "Gagal mengambil daftar dokumen");
+        }
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFiles();
+  }, []);
+
+  const formatSize = (bytes: string | number) => {
+    const b = Number(bytes);
+    if (isNaN(b) || b === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(b) / Math.log(k));
+    return parseFloat((b / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  const formatDate = (isoStr: string) => {
+    const date = new Date(isoStr);
+    return date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  };
+
+  const getFileIcon = (mimeType: string, filename: string = "") => {
+    if (mimeType.includes("pdf")) return <FileText className="h-5 w-5 text-red-400" />;
+    if (mimeType.includes("spreadsheet") || mimeType.includes("excel") || filename.endsWith(".xls") || filename.endsWith(".xlsx")) return <FileSpreadsheet className="h-5 w-5 text-green-400" />;
+    if (mimeType.includes("image")) return <FileImage className="h-5 w-5 text-purple-400" />;
+    return <FileText className="h-5 w-5 text-blue-400" />;
   };
 
   return (
@@ -115,36 +155,51 @@ export default function PenyimpananDokumenPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-edge">
-                {FILES.map((file) => (
-                  <tr key={file.id} className="transition-colors hover:bg-surface-2">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        {getFileIcon(file.type)}
-                        <span className="font-medium text-ink">{file.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-ink-2">{file.size}</td>
-                    <td className="py-3 px-4 text-ink-2">{file.date}</td>
-                    <td className="py-3 px-4">
-                      <span className="inline-flex items-center rounded-full bg-surface-3 px-2 py-0.5 text-xs text-ink-2">
-                        {file.uploader}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button className="rounded-md p-1.5 text-ink-3 hover:bg-surface-3 hover:text-accent transition-colors" title="Lihat">
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button className="rounded-md p-1.5 text-ink-3 hover:bg-surface-3 hover:text-accent transition-colors" title="Download">
-                          <Download className="h-4 w-4" />
-                        </button>
-                        <button className="rounded-md p-1.5 text-ink-3 hover:bg-red-500/10 hover:text-red-500 transition-colors" title="Hapus">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-ink-3">Sedang memuat dokumen...</td>
                   </tr>
-                ))}
+                ) : error ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-red-400">{error}</td>
+                  </tr>
+                ) : driveFiles.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-ink-3">Tidak ada dokumen ditemukan.</td>
+                  </tr>
+                ) : (
+                  driveFiles.map((file) => (
+                    <tr key={file.id} className="transition-colors hover:bg-surface-2">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          {getFileIcon(file.mimeType, file.name)}
+                          <span className="font-medium text-ink truncate max-w-[200px] sm:max-w-xs block" title={file.name}>{file.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-ink-2">{formatSize(file.size)}</td>
+                      <td className="py-3 px-4 text-ink-2">{formatDate(file.createdTime)}</td>
+                      <td className="py-3 px-4">
+                        <span className="inline-flex items-center rounded-full bg-surface-3 px-2 py-0.5 text-xs text-ink-2">
+                          Sistem
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {file.webViewLink && (
+                            <a href={file.webViewLink} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-ink-3 hover:bg-surface-3 hover:text-accent transition-colors" title="Lihat">
+                              <Eye className="h-4 w-4" />
+                            </a>
+                          )}
+                          {file.webContentLink && (
+                            <a href={file.webContentLink} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-ink-3 hover:bg-surface-3 hover:text-accent transition-colors" title="Download">
+                              <Download className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

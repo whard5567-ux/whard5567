@@ -19,6 +19,8 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
   const [mtuFilter, setMtuFilter] = useState<string[]>([]);
   const [kategoriUsiaFilter, setKategoriUsiaFilter] = useState<string[]>([]);
   const [ahiFilter, setAhiFilter] = useState<string[]>([]);
+  const [teganganFilter, setTeganganFilter] = useState<string[]>([]);
+  const [merkFilter, setMerkFilter] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isExportingJpg, setIsExportingJpg] = useState(false);
 
@@ -33,6 +35,7 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
         bay: (r.bay || "-").trim(),
         mtu: (r.mtu || "-").trim(),
         merk: (r.merk || "-").trim(),
+        tegangan: (r.teg || "-").trim(),
         usia: (r.usia || "-").trim(),
         kategoriUsia: (r.kategori_usia || "-").trim(),
         ahiTerbaru: (r.ahi_terbaru || "-").trim(),
@@ -48,6 +51,8 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
   const mtuOptions = useMemo(() => Array.from(new Set(records.map(r => r.mtu).filter(x => x && x !== "-"))).sort(), [records]);
   const kategoriUsiaOptions = useMemo(() => Array.from(new Set(records.map(r => r.kategoriUsia).filter(x => x && x !== "-"))).sort(), [records]);
   const ahiOptions = useMemo(() => Array.from(new Set(records.map(r => r.ahiTerbaru).filter(x => x && x !== "-"))).sort(), [records]);
+  const teganganOptions = useMemo(() => Array.from(new Set(records.map(r => r.tegangan).filter(x => x && x !== "-"))).sort(), [records]);
+  const merkOptions = useMemo(() => Array.from(new Set(records.map(r => r.merk).filter(x => x && x !== "-"))).sort(), [records]);
 
   const filteredRecords = useMemo(() => {
     return records.filter((r) => {
@@ -56,6 +61,8 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
       const matchMtu = mtuFilter.length === 0 || mtuFilter.includes(r.mtu);
       const matchKategori = kategoriUsiaFilter.length === 0 || kategoriUsiaFilter.includes(r.kategoriUsia);
       const matchAhi = ahiFilter.length === 0 || ahiFilter.includes(r.ahiTerbaru);
+      const matchTegangan = teganganFilter.length === 0 || teganganFilter.includes(r.tegangan);
+      const matchMerk = merkFilter.length === 0 || merkFilter.includes(r.merk);
       
       const searchLower = searchQuery.toLowerCase();
       const matchSearch = searchQuery === "" || 
@@ -64,9 +71,9 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
         r.techidentno.toLowerCase().includes(searchLower) ||
         r.parameterPemicu.toLowerCase().includes(searchLower);
 
-      return matchUpt && matchGi && matchMtu && matchKategori && matchAhi && matchSearch;
+      return matchUpt && matchGi && matchMtu && matchKategori && matchAhi && matchSearch && matchTegangan && matchMerk;
     });
-  }, [records, uptFilter, giFilter, mtuFilter, kategoriUsiaFilter, ahiFilter, searchQuery]);
+  }, [records, uptFilter, giFilter, mtuFilter, kategoriUsiaFilter, ahiFilter, teganganFilter, merkFilter, searchQuery]);
 
   // Aggregate Stats
   const stats = useMemo(() => {
@@ -108,6 +115,8 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
     setMtuFilter([]);
     setKategoriUsiaFilter([]);
     setAhiFilter([]);
+    setTeganganFilter([]);
+    setMerkFilter([]);
     setSearchQuery("");
   };
 
@@ -274,6 +283,7 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
             <th className="px-3 py-2">Gardu Induk</th>
             <th className="px-3 py-2">Bay</th>
             <th className="px-3 py-2">MTU</th>
+            <th className="px-3 py-2">Tegangan</th>
             <th className="px-3 py-2">Merk</th>
             <th className="px-3 py-2">Usia (Thn)</th>
             <th className="px-3 py-2">Kategori Usia</th>
@@ -291,6 +301,7 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
               <td className="px-3 py-1.5 font-bold">{r.garduInduk}</td>
               <td className="px-3 py-1.5">{r.bay}</td>
               <td className="px-3 py-1.5">{r.mtu}</td>
+              <td className="px-3 py-1.5">{r.tegangan}</td>
               <td className="px-3 py-1.5">{r.merk}</td>
               <td className="px-3 py-1.5">{r.usia}</td>
               <td className="px-3 py-1.5">{r.kategoriUsia}</td>
@@ -301,12 +312,12 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
           )})}
           {filteredRecords.length === 0 && (
             <tr>
-              <td colSpan={10} className="p-8 text-center text-ink-3">Tidak ada data untuk filter saat ini.</td>
+              <td colSpan={11} className="p-8 text-center text-ink-3">Tidak ada data untuk filter saat ini.</td>
             </tr>
           )}
           {filteredRecords.length > 100 && (
             <tr>
-              <td colSpan={10} className="p-3 text-center text-ink-3 text-[10px] italic bg-surface-2/50">
+              <td colSpan={11} className="p-3 text-center text-ink-3 text-[10px] italic bg-surface-2/50">
                 Menampilkan 100 dari {filteredRecords.length} data.
               </td>
             </tr>
@@ -323,6 +334,8 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
       <MultiSelect label="MTU" options={mtuOptions} selected={mtuFilter} onChange={setMtuFilter} />
       <MultiSelect label="Kategori Usia" options={kategoriUsiaOptions} selected={kategoriUsiaFilter} onChange={setKategoriUsiaFilter} />
       <MultiSelect label="AHI" options={ahiOptions} selected={ahiFilter} onChange={setAhiFilter} />
+      <MultiSelect label="Tegangan" options={teganganOptions} selected={teganganFilter} onChange={setTeganganFilter} />
+      <MultiSelect label="Merk" options={merkOptions} selected={merkFilter} onChange={setMerkFilter} />
     </>
   );
 

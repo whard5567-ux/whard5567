@@ -167,3 +167,15 @@ body::after {
   background-attachment: fixed, fixed;
   background-repeat: no-repeat, no-repeat;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}

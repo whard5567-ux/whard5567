@@ -116,10 +116,9 @@ export function EquipmentCard({
               <div className="flex justify-between items-center text-xs font-bold text-slate-800 leading-tight gap-2">
                 <span className="pr-1" title={u.uraian}>{u.uraian}</span>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-[9px] font-semibold text-slate-500 tracking-wider">
-                    <span className="text-emerald-600">{u.closed} C</span>
-                    <span className="mx-0.5 opacity-50">/</span>
-                    <span className="text-rose-500">{openCount} O</span>
+                  <span className="flex items-center gap-1">
+                    <span className="flex items-center justify-center min-w-[22px] h-[22px] bg-white border border-emerald-300 rounded text-[10px] text-emerald-600 font-bold shadow-sm" title="Close">{u.closed}</span>
+                    <span className="flex items-center justify-center min-w-[22px] h-[22px] bg-white border border-rose-300 rounded text-[10px] text-rose-600 font-bold shadow-sm" title="Open">{openCount}</span>
                   </span>
                   <span className="w-9 text-right">{u.progress}%</span>
                 </div>

@@ -138,7 +138,10 @@ function LevelPanel({
   onClick: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
-  const pct = data.total === 0 ? 0 : (data.close / data.total) * 100;
+  let pct = data.total === 0 ? 0 : (data.close / data.total) * 100;
+  if (data.total === 0 && data.level.toUpperCase() === "GIS") {
+    pct = 100;
+  }
   const baseBg = `radial-gradient(ellipse 60% 80% at 100% 0%, color-mix(in oklab, ${accent.a} 6%, transparent), transparent 65%)`;
   const activeBg = `radial-gradient(ellipse 70% 100% at 50% 50%, color-mix(in oklab, ${accent.a} 14%, transparent), transparent 70%)`;
   const hoverBg = `radial-gradient(ellipse 70% 100% at 50% 50%, color-mix(in oklab, ${accent.a} 10%, transparent), transparent 70%)`;

@@ -210,7 +210,7 @@ export function ceAggregate(rows: CeRow[]) {
     total: gisTotal,
     closed: gisClosed,
     open: gisOpen,
-    progress: gisTotal > 0 ? Math.round((gisClosed / gisTotal) * 10000) / 100 : 0,
+    progress: gisTotal > 0 ? Math.round((gisClosed / gisTotal) * 10000) / 100 : 100,
   };
 
   // Tabel ringkasan UPT: pecah per kondisi (VG/G/F/P/C) + total (fokus TEMUAN)
@@ -313,6 +313,9 @@ export function ceAggregate(rows: CeRow[]) {
     return la.includes("GIS");
   };
   const gisStat = calcEqStat(rows.filter(isGisStat), findingRows.filter(isGisStat));
+  if (gisStat.total === 0) {
+    gisStat.progress = 100;
+  }
 
   return {
     stats: { total, closed, open, progress },

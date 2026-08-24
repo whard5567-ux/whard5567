@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Search, FileSpreadsheet, Activity, AlertTriangle, Presentation, CheckCircle2, AlertCircle, ImageIcon } from "lucide-react";
+import { Search, FileSpreadsheet, Activity, AlertTriangle, Presentation, CheckCircle2, AlertCircle, ImageIcon, X, Printer } from "lucide-react";
 import { exportDashboardAsJpg } from "@/lib/export-image";
 import { conditionColor } from "@/lib/colors";
 import { pieOption, stackedBarOption } from "@/lib/echart-options";
@@ -23,6 +23,7 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
   const [merkFilter, setMerkFilter] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isExportingJpg, setIsExportingJpg] = useState(false);
+  const [selectedRecordForPrint, setSelectedRecordForPrint] = useState<typeof records[0] | null>(null);
 
   // Map database rows to clean view records
   const records = useMemo(() => {
@@ -273,6 +274,57 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
     );
   }, [filteredRecords, t]);
 
+  // ECharts: Jumlah AHI per MTU (Stacked Horizontal Bar)
+  const mtuChartOption = useMemo(() => {
+    const mtuTotals: Record<string, number> = {};
+    const mtuStatusCounts: Record<string, Record<string, number>> = {};
+    
+    filteredRecords.forEach(r => {
+      const cat = r.mtu;
+      if (cat && cat !== "-") {
+        mtuTotals[cat] = (mtuTotals[cat] || 0) + 1;
+        if (!mtuStatusCounts[cat]) {
+          mtuStatusCounts[cat] = {
+            "5-Critical": 0,
+            "4-Poor": 0,
+            "3-Fair": 0,
+            "2-Good": 0,
+            "1-Very Good": 0
+          };
+        }
+        const ahi = r.ahiTerbaru.toUpperCase();
+        if (ahi.includes("5") || ahi.includes("CRITICAL")) mtuStatusCounts[cat]["5-Critical"]++;
+        else if (ahi.includes("4") || ahi.includes("POOR")) mtuStatusCounts[cat]["4-Poor"]++;
+        else if (ahi.includes("3") || ahi.includes("FAIR")) mtuStatusCounts[cat]["3-Fair"]++;
+        else if (ahi.includes("1") || ahi.includes("VERY GOOD")) mtuStatusCounts[cat]["1-Very Good"]++;
+        else if (ahi.includes("2") || ahi.includes("GOOD")) mtuStatusCounts[cat]["2-Good"]++;
+        else mtuStatusCounts[cat]["2-Good"]++; // Fallback
+      }
+    });
+    
+    // Sort MTUs by total descending, but array order for horizontal chart needs to be ascending so highest is at top
+    let sortedMtus = Object.keys(mtuTotals).sort((a, b) => mtuTotals[a] - mtuTotals[b]);
+    if (sortedMtus.length > 12) {
+       sortedMtus = sortedMtus.slice(-12); // Take top 12 highest
+    }
+    const totals = sortedMtus.map(u => mtuTotals[u]);
+    
+    const series = [
+      { name: "5-Critical", data: sortedMtus.map(u => mtuStatusCounts[u]["5-Critical"]), color: "#b91c1c" },
+      { name: "4-Poor", data: sortedMtus.map(u => mtuStatusCounts[u]["4-Poor"]), color: "#f87171" },
+      { name: "3-Fair", data: sortedMtus.map(u => mtuStatusCounts[u]["3-Fair"]), color: "#fbbf24" },
+      { name: "2-Good", data: sortedMtus.map(u => mtuStatusCounts[u]["2-Good"]), color: "#10b981" },
+      { name: "1-Very Good", data: sortedMtus.map(u => mtuStatusCounts[u]["1-Very Good"]), color: "#3b82f6" },
+    ].filter(s => s.data.some(d => d > 0)); // Hide series with no data
+    
+    return stackedBarOption(
+      t,
+      sortedMtus,
+      series,
+      { horizontal: true, totals }
+    );
+  }, [filteredRecords, t]);
+
   // ===== Rincian Data Table =====
   const rincianTable = useMemo(() => (
     <div className="overflow-auto max-h-[500px] w-full scrollbar-thin">
@@ -305,7 +357,14 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
               <td className="px-3 py-1.5">{r.merk}</td>
               <td className="px-3 py-1.5">{r.usia}</td>
               <td className="px-3 py-1.5">{r.kategoriUsia}</td>
-              <td className="px-3 py-1.5 font-bold" style={{ color: conditionColor(r.ahiTerbaru) }}>{r.ahiTerbaru}</td>
+              <td 
+                className="px-3 py-1.5 font-bold cursor-pointer hover:underline" 
+                style={{ color: conditionColor(r.ahiTerbaru) }}
+                onClick={() => setSelectedRecordForPrint(r)}
+                title="Klik untuk melihat Detail Laporan"
+              >
+                {r.ahiTerbaru}
+              </td>
               <td className="px-3 py-1.5 whitespace-normal break-words min-w-[200px]">{r.parameterPemicu}</td>
               <td className="px-3 py-1.5 whitespace-normal break-words min-w-[200px]">{r.rtl}</td>
             </tr>
@@ -340,7 +399,8 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
   );
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6 print:hidden">
       {/* FILTER BAR PANEL */}
       <div className="card rise rise-1 relative z-30 p-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -479,6 +539,14 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
               <EChart key={`s-merk-hbar-${t.key}`} option={merkChartOption} />
             )}
           </ChartCard>
+          
+          <ChartCard title="Status AHI per MTU (Top 12)" className="min-h-[300px] lg:h-80 rise rise-8">
+            {stats.total === 0 ? (
+              <div className="flex h-full items-center justify-center text-xs text-ink-3">Tidak ada data</div>
+            ) : (
+              <EChart key={`s-mtu-hbar-${t.key}`} option={mtuChartOption} />
+            )}
+          </ChartCard>
         </div>
 
         {/* DATA TABLE */}
@@ -488,6 +556,103 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
           </div>
         </ChartCard>
       </div>
-    </div>
+      </div>
+
+      {/* MODAL LAPORAN DETAIL (Bisa di-print) */}
+      {selectedRecordForPrint && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm print:relative print:block print:inset-auto print:bg-transparent print:p-0 print:z-auto">
+          <div className="bg-white text-black w-full max-w-3xl rounded-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden print:max-w-none print:rounded-none print:shadow-none print:max-h-none print:block">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl print:hidden">
+              <h2 className="text-lg font-bold text-gray-800">Preview Laporan AHI MTU</h2>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => window.print()}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold text-sm"
+                >
+                  <Printer className="h-4 w-4" />
+                  Cetak / Save PDF
+                </button>
+                <button 
+                  onClick={() => setSelectedRecordForPrint(null)}
+                  className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Area yang akan dicetak */}
+            <div id="print-section" className="p-8 overflow-y-auto bg-white text-black text-sm print:overflow-visible print:p-2 print:text-[13px] print:h-auto print:max-h-screen">
+              <div className="text-center mb-8 print:mb-4 border-b-2 border-gray-800 pb-4 print:pb-2">
+                <h1 className="text-2xl font-black uppercase tracking-wider text-gray-900 mb-1">
+                  Laporan Asesmen Kondisi MTU (AHI)
+                </h1>
+                <p className="text-gray-600 font-medium">PT PLN (Persero) - Dashboard Monitoring Peralatan</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-8 print:gap-4 mb-8 print:mb-4">
+                <div>
+                  <h3 className="font-bold text-gray-800 border-b border-gray-300 mb-3 print:mb-1 pb-1 text-base uppercase">Informasi Lokasi</h3>
+                  <table className="w-full text-left">
+                    <tbody>
+                      <tr><td className="py-1.5 print:py-0.5 w-32 font-semibold text-gray-600">UPT</td><td className="py-1.5 print:py-0.5 font-bold">: {selectedRecordForPrint.upt}</td></tr>
+                      <tr><td className="py-1.5 print:py-0.5 w-32 font-semibold text-gray-600">Gardu Induk</td><td className="py-1.5 print:py-0.5 font-bold">: {selectedRecordForPrint.garduInduk}</td></tr>
+                      <tr><td className="py-1.5 print:py-0.5 w-32 font-semibold text-gray-600">Bay</td><td className="py-1.5 print:py-0.5 font-bold">: {selectedRecordForPrint.bay}</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                
+                <div>
+                  <h3 className="font-bold text-gray-800 border-b border-gray-300 mb-3 print:mb-1 pb-1 text-base uppercase">Spesifikasi Peralatan</h3>
+                  <table className="w-full text-left">
+                    <tbody>
+                      <tr><td className="py-1.5 print:py-0.5 w-32 font-semibold text-gray-600">No Seri / TechId</td><td className="py-1.5 print:py-0.5 font-bold">: {selectedRecordForPrint.techidentno}</td></tr>
+                      <tr><td className="py-1.5 print:py-0.5 w-32 font-semibold text-gray-600">Fungsi / MTU</td><td className="py-1.5 print:py-0.5 font-bold">: {selectedRecordForPrint.mtu}</td></tr>
+                      <tr><td className="py-1.5 print:py-0.5 w-32 font-semibold text-gray-600">Merk</td><td className="py-1.5 print:py-0.5 font-bold">: {selectedRecordForPrint.merk}</td></tr>
+                      <tr><td className="py-1.5 print:py-0.5 w-32 font-semibold text-gray-600">Tegangan</td><td className="py-1.5 print:py-0.5 font-bold">: {selectedRecordForPrint.tegangan}</td></tr>
+                      <tr><td className="py-1.5 print:py-0.5 w-32 font-semibold text-gray-600">Tahun/Usia</td><td className="py-1.5 print:py-0.5 font-bold">: {selectedRecordForPrint.usia} ({selectedRecordForPrint.kategoriUsia})</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="mb-8 print:mb-4">
+                <h3 className="font-bold text-gray-800 border-b border-gray-300 mb-3 print:mb-1 pb-1 text-base uppercase">Hasil Asesmen</h3>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 print:p-3">
+                  <div className="flex flex-col gap-5 print:gap-3">
+                    <div>
+                      <div className="text-xs font-bold text-gray-500 uppercase mb-1 print:mb-0">Status AHI Terbaru</div>
+                      <div className="text-lg font-black" style={{ color: conditionColor(selectedRecordForPrint.ahiTerbaru) }}>
+                        {selectedRecordForPrint.ahiTerbaru}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="text-xs font-bold text-gray-500 uppercase mb-1 print:mb-0">Parameter Pemicu Utama</div>
+                      <div className="text-gray-900 font-medium whitespace-pre-wrap">
+                        {selectedRecordForPrint.parameterPemicu || "-"}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="text-xs font-bold text-gray-500 uppercase mb-1 print:mb-0">Rencana Tindak Lanjut (RTL)</div>
+                      <div className="text-gray-900 font-medium whitespace-pre-wrap">
+                        {selectedRecordForPrint.rtl || "-"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-12 print:mt-4 pt-4 border-t border-gray-300 flex justify-between text-xs text-gray-500">
+                <p>Dokumen ini dicetak secara otomatis dari sistem Dashboard Hargi HT2.</p>
+                <p>Tanggal Cetak: {new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

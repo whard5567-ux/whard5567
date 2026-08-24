@@ -248,7 +248,10 @@ export function Abo2026View({
           <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-h-[32rem] overflow-auto scrollbar-thin">
             {uptProgress.map((u) => {
               const anomalies = agg.byUptAnomali.get(u.name);
-              const anomalyList = anomalies ? [...anomalies.entries()].sort((a, b) => b[1] - a[1]) : [];
+              let anomalyList = anomalies ? [...anomalies.entries()].sort((a, b) => b[1] - a[1]) : [];
+              if (u.name.toUpperCase().includes("SEMARANG") && !anomalyList.some(([ano]) => ano === "TS-FYI")) {
+                anomalyList.push(["TS-FYI", 0]);
+              }
               
               return (
               <div key={u.name} className="relative [text-shadow:none] bg-gradient-to-br from-blue-100 to-blue-50 text-slate-800 rounded-xl p-4 shadow-[5px_5px_0_0_#ef4444] border border-blue-200 mt-2 ml-2 mb-2 transition-transform hover:-translate-y-1 hover:shadow-[7px_7px_0_0_#ef4444]">
@@ -297,10 +300,9 @@ export function Abo2026View({
                           <span className="px-2 py-1.5 text-slate-700 flex items-center font-medium flex-1 leading-snug">
                             {ano}
                           </span>
-                          <span className="flex items-center px-2 py-1.5 bg-gradient-to-br from-blue-100 to-blue-200/50 border-l border-blue-200/60 shrink-0">
-                            <span className="text-emerald-600 font-bold" title="Close">{c}</span>
-                            <span className="text-slate-400 mx-1">/</span>
-                            <span className="text-red-500 font-bold" title="Open">{o}</span>
+                          <span className="flex items-center gap-1.5 px-2 py-1 bg-gradient-to-br from-blue-100 to-blue-200/50 border-l border-blue-200/60 shrink-0">
+                            <span className="flex items-center justify-center min-w-[24px] h-[24px] bg-white border border-emerald-200 rounded text-emerald-600 font-bold shadow-sm" title="Close">{c}</span>
+                            <span className="flex items-center justify-center min-w-[24px] h-[24px] bg-white border border-red-200 rounded text-red-500 font-bold shadow-sm" title="Open">{o}</span>
                           </span>
                         </div>
                       );
@@ -399,7 +401,10 @@ export function Abo2026View({
                     <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-h-[32rem] overflow-auto scrollbar-thin">
                       {uptProgress.map((u) => {
                         const anomalies = agg.byUptAnomali.get(u.name);
-                        const anomalyList = anomalies ? [...anomalies.entries()].sort((a, b) => b[1] - a[1]) : [];
+                        let anomalyList = anomalies ? [...anomalies.entries()].sort((a, b) => b[1] - a[1]) : [];
+                        if (u.name.toUpperCase().includes("SEMARANG") && !anomalyList.some(([ano]) => ano === "TS-FYI")) {
+                          anomalyList.push(["TS-FYI", 0]);
+                        }
                         
                         return (
                         <div key={u.name} className="relative [text-shadow:none] bg-gradient-to-br from-blue-100 to-blue-50 text-slate-800 rounded-xl p-4 shadow-[5px_5px_0_0_#ef4444] border border-blue-200 mt-2 ml-2 mb-2 transition-transform hover:-translate-y-1 hover:shadow-[7px_7px_0_0_#ef4444]">
@@ -448,10 +453,9 @@ export function Abo2026View({
                                     <span className="px-2 py-1.5 text-slate-700 flex items-center font-medium flex-1 leading-snug">
                                       {ano}
                                     </span>
-                                    <span className="flex items-center px-2 py-1.5 bg-gradient-to-br from-blue-100 to-blue-200/50 border-l border-blue-200/60 shrink-0">
-                                      <span className="text-emerald-600 font-bold" title="Close">{c}</span>
-                                      <span className="text-slate-400 mx-1">/</span>
-                                      <span className="text-red-500 font-bold" title="Open">{o}</span>
+                                    <span className="flex items-center gap-1.5 px-2 py-1 bg-gradient-to-br from-blue-100 to-blue-200/50 border-l border-blue-200/60 shrink-0">
+                                      <span className="flex items-center justify-center min-w-[24px] h-[24px] bg-white border border-emerald-200 rounded text-emerald-600 font-bold shadow-sm" title="Close">{c}</span>
+                                      <span className="flex items-center justify-center min-w-[24px] h-[24px] bg-white border border-red-200 rounded text-red-500 font-bold shadow-sm" title="Open">{o}</span>
                                     </span>
                                   </div>
                                 );

@@ -15,6 +15,8 @@ export type CeRow = {
   kondisi_awal: string;
   kondisi_akhir: string;
   status_terkini: string;
+  tgl_rencana_tinjut?: string;
+  tgl_realisasi_tinjut?: string;
 };
 
 export type GgnRow = {

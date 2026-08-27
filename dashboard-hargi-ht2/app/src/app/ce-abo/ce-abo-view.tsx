@@ -165,6 +165,123 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
   const uraianLevelLabels = [...agg.byLevelUraian.keys()].sort();
   const uraianAll = [...new Set([...agg.byLevelUraian.values()].flatMap((m) => [...m.keys()]))].sort();
 
+  // ===== Roadmap Tinjut =====
+  const parseTime = (val: string) => {
+    if (!val) return "";
+    const s = val.toLowerCase().trim();
+    // 1. Format: Bulan Tahun (e.g., Juli 2026)
+    const match = s.match(/([a-z]+)\s+(\d{4})/);
+    if (match) {
+      const month = match[1];
+      const year = match[2];
+      const mMap: Record<string, string> = { jan: "Jan", januari: "Jan", feb: "Feb", februari: "Feb", mar: "Mar", maret: "Mar", apr: "Apr", april: "Apr", mei: "May", may: "May", jun: "Jun", juni: "Jun", jul: "Jul", juli: "Jul", agu: "Aug", agustus: "Aug", aug: "Aug", sep: "Sep", september: "Sep", okt: "Oct", oktober: "Oct", oct: "Oct", nov: "Nov", november: "Nov", des: "Dec", desember: "Dec", dec: "Dec" };
+      const m = mMap[month] || month;
+      return `${m} ${year}`;
+    }
+    // 2. Format: MM/DD/YYYY or DD/MM/YYYY
+    const dateMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (dateMatch) {
+      const p1 = parseInt(dateMatch[1]);
+      const p2 = parseInt(dateMatch[2]);
+      const yyyy = dateMatch[3];
+      // Assume MM/DD/YYYY if p1 <= 12 and p2 > 12, or just stick to MM/DD/YYYY default if both <= 12
+      const mm = p1 <= 12 ? p1 : p2;
+      const dd = p1 <= 12 ? p2 : p1;
+      const mMapStr = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return `${dd} ${mMapStr[mm] || "Jan"} ${yyyy}`;
+    }
+    return s;
+  };
+
+  const rencanaMap = new Map<string, number>();
+  const allTimeKeys = new Set<string>();
+
+  for (const r of filtered) {
+    if (r.status_terkini?.toUpperCase() === "OPEN" && r.tgl_rencana_tinjut) {
+      const tm = parseTime(r.tgl_rencana_tinjut);
+      if (tm) {
+        rencanaMap.set(tm, (rencanaMap.get(tm) || 0) + 1);
+        allTimeKeys.add(tm);
+      }
+    }
+  }
+
+  const sortedTimeKeys = Array.from(allTimeKeys).sort((a, b) => {
+    const yearA = a.match(/\d{4}/)?.[0] || "0";
+    const yearB = b.match(/\d{4}/)?.[0] || "0";
+    if (yearA !== yearB) return parseInt(yearA) - parseInt(yearB);
+    
+    const mMap: Record<string, number> = { "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6, "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12 };
+    
+    // Extract month: if format is "DD MMM YYYY", month is at index 1. If "MMM YYYY", month is at index 0.
+    const partsA = a.split(" ");
+    const partsB = b.split(" ");
+    const getMonth = (parts: string[]) => parts.length === 3 ? parts[1] : parts[0];
+    const getDay = (parts: string[]) => parts.length === 3 ? parseInt(parts[0]) : 0;
+    
+    const mA = mMap[getMonth(partsA)] || 0;
+    const mB = mMap[getMonth(partsB)] || 0;
+    
+    if (mA !== mB) return mA - mB;
+    
+    const dA = getDay(partsA);
+    const dB = getDay(partsB);
+    if (dA !== dB) return dA - dB;
+    
+    return a.localeCompare(b);
+  });
+
+  const roadmapOption = useMemo(() => {
+    if (sortedTimeKeys.length === 0) {
+      return lineOption(
+        t,
+        ["Belum ada data"],
+        [
+          {
+            name: "Rencana",
+            data: [0],
+            color: PALETTE[1],
+            bold: true
+          },
+          {
+            name: "Sisa Target",
+            data: [0],
+            color: "#f59e0b",
+            bold: true
+          }
+        ]
+      );
+    }
+
+    const rencanaData = sortedTimeKeys.map(k => rencanaMap.get(k) || 0);
+    const totalBacklog = rencanaData.reduce((acc, val) => acc + val, 0);
+    let remaining = totalBacklog;
+    
+    const prognosaData = rencanaData.map(val => {
+      remaining -= val;
+      return remaining;
+    });
+
+    return lineOption(
+      t,
+      sortedTimeKeys,
+      [
+        {
+          name: "Rencana",
+          data: rencanaData,
+          color: PALETTE[1],
+          bold: true
+        },
+        {
+          name: "Sisa Target",
+          data: prognosaData,
+          color: "#f59e0b",
+          bold: true
+        }
+      ]
+    );
+  }, [sortedTimeKeys, t, rencanaMap]);
+
   // ===== Slide Deck Slides =====
   const slides = useMemo(() => [
     {
@@ -428,6 +545,14 @@ export function CeAboView({ rows }: { rows: CeRow[] }) {
                 </tfoot>
               </table>
             </div>
+          </div>
+        </ChartCard>
+      </div>
+      
+      <div className="grid grid-cols-1 mt-3">
+        <ChartCard title="Roadmap Tindak Lanjut" className="rise rise-6 min-h-72">
+          <div className="h-72">
+            <EChart key={`roadmap-${t.key}`} option={roadmapOption} />
           </div>
         </ChartCard>
       </div>

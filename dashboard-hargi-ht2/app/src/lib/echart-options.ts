@@ -204,11 +204,11 @@ export function lineOption(t: ChartTheme, xLabels: string[], series: LineSeries[
       textStyle: { color: t.tick, fontSize: 12 },
       pageTextStyle: { color: t.tick },
     },
-    grid: { left: 8, right: 40, top: 36, bottom: 8, containLabel: true },
+    grid: { left: 24, right: 40, top: 36, bottom: 24, containLabel: true },
     xAxis: {
       type: "category",
       data: xLabels,
-      boundaryGap: false,
+      boundaryGap: true,
       axisLabel: { color: t.tick, fontSize: FONT_LABEL, interval: 0 as const, rotate: xLabels.length > 10 ? 35 : 0 },
       axisLine: { lineStyle: { color: t.grid } },
     },

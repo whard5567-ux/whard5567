@@ -340,6 +340,7 @@ function mapAhiMtu(rows: string[][]) {
     koordinat: opt("koordinat"),
     kategori_usia: opt("kategori", "usia"),
     ahi_terbaru: opt("ahi", "terbaru"),
+    tier: opt("tier") !== -1 ? opt("tier") : 23,
   };
 
   return dataRows
@@ -371,6 +372,7 @@ function mapAhiMtu(rows: string[][]) {
         koordinat: col.koordinat >= 0 ? clean(r[col.koordinat]) : "",
         kategori_usia: col.kategori_usia >= 0 ? clean(r[col.kategori_usia]) : "",
         ahi_terbaru: col.ahi_terbaru >= 0 ? clean(r[col.ahi_terbaru]) : "",
+        tier: col.tier >= 0 ? clean(r[col.tier]) : "",
         raw: rawObj,
       };
     });

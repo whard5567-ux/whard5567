@@ -27,6 +27,7 @@ export async function GET() {
         koordinat VARCHAR,
         kategori_usia VARCHAR,
         ahi_terbaru VARCHAR,
+        tier VARCHAR,
         raw JSONB
       );
     `;
@@ -35,8 +36,9 @@ export async function GET() {
     try {
       await sql`ALTER TABLE hargi_ht2.refresh_log ADD COLUMN IF NOT EXISTS sheet_name_ahi_mtu VARCHAR;`;
       await sql`ALTER TABLE hargi_ht2.refresh_log ADD COLUMN IF NOT EXISTS sheet_modified_ahi_mtu VARCHAR;`;
+      await sql`ALTER TABLE hargi_ht2.kondisi_ahi_mtu ADD COLUMN IF NOT EXISTS tier VARCHAR;`;
     } catch (e) {
-      console.warn("Failed to alter refresh_log table (might already have the columns)", e);
+      console.warn("Failed to alter table (might already have the columns)", e);
     }
 
     return NextResponse.json({ success: true, message: "Tables created and updated successfully." });

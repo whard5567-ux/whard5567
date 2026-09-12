@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { UploadModal } from "./upload-modal";
-import { Folder, FileText, FileImage, FileSpreadsheet, Download, Trash2, Search, Filter, Plus, Eye } from "lucide-react";
+import { Folder, FileText, FileImage, FileSpreadsheet, Download, Trash2, Search, Filter, Plus, Eye, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 // Dummy Data
 const FOLDERS = [
@@ -27,6 +27,23 @@ export default function PenyimpananDokumenPage() {
   const [driveFiles, setDriveFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const imageFiles = driveFiles.filter(file => file.mimeType?.includes("image"));
+
+  const openLightbox = (fileId: string) => {
+    const index = imageFiles.findIndex(f => f.id === fileId);
+    if (index !== -1) {
+      setLightboxIndex(index);
+      setLightboxOpen(true);
+    } else {
+      const file = driveFiles.find(f => f.id === fileId);
+      if (file?.webViewLink) {
+        window.open(file.webViewLink, '_blank');
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -185,8 +202,12 @@ export default function PenyimpananDokumenPage() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {file.webViewLink && (
-                            <a href={file.webViewLink} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-ink-3 hover:bg-surface-3 hover:text-accent transition-colors" title="Lihat">
+                          {file.mimeType?.includes("image") ? (
+                            <button onClick={() => openLightbox(file.id)} className="rounded-md p-1.5 text-ink-3 hover:bg-surface-3 hover:text-accent transition-colors" title="Lihat Gambar">
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          ) : file.webViewLink && (
+                            <a href={file.webViewLink} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-ink-3 hover:bg-surface-3 hover:text-accent transition-colors" title="Lihat Dokumen">
                               <Eye className="h-4 w-4" />
                             </a>
                           )}
@@ -208,6 +229,48 @@ export default function PenyimpananDokumenPage() {
       </div>
 
       {showUpload && <UploadModal onClose={() => setShowUpload(false)} />}
+
+      {/* Lightbox / Slideshow */}
+      {lightboxOpen && imageFiles.length > 0 && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-200">
+          <button 
+            onClick={() => setLightboxOpen(false)} 
+            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full"
+          >
+            <X className="h-8 w-8" />
+          </button>
+          
+          {imageFiles.length > 1 && (
+            <>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setLightboxIndex((prev) => (prev > 0 ? prev - 1 : imageFiles.length - 1)); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-all p-3 bg-black/50 hover:bg-black/80 rounded-full backdrop-blur-md hover:scale-110 active:scale-95"
+              >
+                <ChevronLeft className="h-8 w-8" />
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setLightboxIndex((prev) => (prev < imageFiles.length - 1 ? prev + 1 : 0)); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-all p-3 bg-black/50 hover:bg-black/80 rounded-full backdrop-blur-md hover:scale-110 active:scale-95"
+              >
+                <ChevronRight className="h-8 w-8" />
+              </button>
+            </>
+          )}
+          
+          <div className="max-w-6xl max-h-screen p-4 flex flex-col items-center justify-center w-full h-full" onClick={() => setLightboxOpen(false)}>
+            <img 
+              src={imageFiles[lightboxIndex].thumbnailLink?.replace('=s220', '=s1000') || imageFiles[lightboxIndex].webContentLink} 
+              alt={imageFiles[lightboxIndex].name} 
+              className="max-h-[85vh] max-w-full object-contain rounded-lg shadow-2xl transition-all duration-300"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div className="text-white mt-6 text-center bg-black/50 px-6 py-2 rounded-full backdrop-blur-md" onClick={(e) => e.stopPropagation()}>
+              <p className="font-medium text-lg">{imageFiles[lightboxIndex].name}</p>
+              <p className="text-sm text-gray-300 mt-1">{lightboxIndex + 1} / {imageFiles.length}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

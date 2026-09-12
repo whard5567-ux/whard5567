@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     // Meminta list file dari folder spesifik
     const response = await drive.files.list({
       q: `'${FOLDER_ID}' in parents and trashed = false`,
-      fields: "files(id, name, mimeType, size, createdTime, webViewLink, webContentLink)",
+      fields: "files(id, name, mimeType, size, createdTime, webViewLink, webContentLink, thumbnailLink)",
       orderBy: "createdTime desc"
     });
 

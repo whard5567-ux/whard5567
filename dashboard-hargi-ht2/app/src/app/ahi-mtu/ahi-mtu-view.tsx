@@ -21,6 +21,7 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
   const [ahiFilter, setAhiFilter] = useState<string[]>([]);
   const [teganganFilter, setTeganganFilter] = useState<string[]>([]);
   const [merkFilter, setMerkFilter] = useState<string[]>([]);
+  const [tierFilter, setTierFilter] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isExportingJpg, setIsExportingJpg] = useState(false);
   const [selectedRecordForPrint, setSelectedRecordForPrint] = useState<typeof records[0] | null>(null);
@@ -40,6 +41,7 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
         usia: (r.usia || "-").trim(),
         kategoriUsia: (r.kategori_usia || "-").trim(),
         ahiTerbaru: (r.ahi_terbaru || "-").trim(),
+        tier: (r.tier || "-").trim(),
         parameterPemicu: (r.parameter_pemicu || "-").trim(),
         rtl: (r.rencana_tindak_lanjut || "-").trim(),
         original: r
@@ -54,6 +56,7 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
   const ahiOptions = useMemo(() => Array.from(new Set(records.map(r => r.ahiTerbaru).filter(x => x && x !== "-"))).sort(), [records]);
   const teganganOptions = useMemo(() => Array.from(new Set(records.map(r => r.tegangan).filter(x => x && x !== "-"))).sort(), [records]);
   const merkOptions = useMemo(() => Array.from(new Set(records.map(r => r.merk).filter(x => x && x !== "-"))).sort(), [records]);
+  const tierOptions = useMemo(() => Array.from(new Set(records.map(r => r.tier).filter(x => x && x !== "-"))).sort(), [records]);
 
   const filteredRecords = useMemo(() => {
     return records.filter((r) => {
@@ -64,6 +67,7 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
       const matchAhi = ahiFilter.length === 0 || ahiFilter.includes(r.ahiTerbaru);
       const matchTegangan = teganganFilter.length === 0 || teganganFilter.includes(r.tegangan);
       const matchMerk = merkFilter.length === 0 || merkFilter.includes(r.merk);
+      const matchTier = tierFilter.length === 0 || tierFilter.includes(r.tier);
       
       const searchLower = searchQuery.toLowerCase();
       const matchSearch = searchQuery === "" || 
@@ -72,9 +76,9 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
         r.techidentno.toLowerCase().includes(searchLower) ||
         r.parameterPemicu.toLowerCase().includes(searchLower);
 
-      return matchUpt && matchGi && matchMtu && matchKategori && matchAhi && matchSearch && matchTegangan && matchMerk;
+      return matchUpt && matchGi && matchMtu && matchKategori && matchAhi && matchSearch && matchTegangan && matchMerk && matchTier;
     });
-  }, [records, uptFilter, giFilter, mtuFilter, kategoriUsiaFilter, ahiFilter, teganganFilter, merkFilter, searchQuery]);
+  }, [records, uptFilter, giFilter, mtuFilter, kategoriUsiaFilter, ahiFilter, teganganFilter, merkFilter, tierFilter, searchQuery]);
 
   // Aggregate Stats
   const stats = useMemo(() => {
@@ -118,6 +122,7 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
     setAhiFilter([]);
     setTeganganFilter([]);
     setMerkFilter([]);
+    setTierFilter([]);
     setSearchQuery("");
   };
 
@@ -339,6 +344,7 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
             <th className="px-3 py-2">Merk</th>
             <th className="px-3 py-2">Usia (Thn)</th>
             <th className="px-3 py-2">Kategori Usia</th>
+            <th className="px-3 py-2">Tier</th>
             <th className="px-3 py-2">AHI Terbaru</th>
             <th className="px-3 py-2">Parameter Pemicu</th>
             <th className="px-3 py-2">RTL</th>
@@ -357,6 +363,7 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
               <td className="px-3 py-1.5">{r.merk}</td>
               <td className="px-3 py-1.5">{r.usia}</td>
               <td className="px-3 py-1.5">{r.kategoriUsia}</td>
+              <td className="px-3 py-1.5">{r.tier}</td>
               <td 
                 className="px-3 py-1.5 font-bold cursor-pointer hover:underline" 
                 style={{ color: conditionColor(r.ahiTerbaru) }}
@@ -371,12 +378,12 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
           )})}
           {filteredRecords.length === 0 && (
             <tr>
-              <td colSpan={11} className="p-8 text-center text-ink-3">Tidak ada data untuk filter saat ini.</td>
+              <td colSpan={12} className="p-8 text-center text-ink-3">Tidak ada data untuk filter saat ini.</td>
             </tr>
           )}
           {filteredRecords.length > 100 && (
             <tr>
-              <td colSpan={11} className="p-3 text-center text-ink-3 text-[10px] italic bg-surface-2/50">
+              <td colSpan={12} className="p-3 text-center text-ink-3 text-[10px] italic bg-surface-2/50">
                 Menampilkan 100 dari {filteredRecords.length} data.
               </td>
             </tr>
@@ -395,6 +402,7 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
       <MultiSelect label="AHI" options={ahiOptions} selected={ahiFilter} onChange={setAhiFilter} />
       <MultiSelect label="Tegangan" options={teganganOptions} selected={teganganFilter} onChange={setTeganganFilter} />
       <MultiSelect label="Merk" options={merkOptions} selected={merkFilter} onChange={setMerkFilter} />
+      <MultiSelect label="Tier" options={tierOptions} selected={tierFilter} onChange={setTierFilter} />
     </>
   );
 
@@ -611,6 +619,7 @@ export function AhiMtuView({ rows }: { rows: AhiMtuRow[] }) {
                       <tr><td className="py-1.5 print:py-0.5 w-32 font-semibold text-gray-600">Fungsi / MTU</td><td className="py-1.5 print:py-0.5 font-bold">: {selectedRecordForPrint.mtu}</td></tr>
                       <tr><td className="py-1.5 print:py-0.5 w-32 font-semibold text-gray-600">Merk</td><td className="py-1.5 print:py-0.5 font-bold">: {selectedRecordForPrint.merk}</td></tr>
                       <tr><td className="py-1.5 print:py-0.5 w-32 font-semibold text-gray-600">Tegangan</td><td className="py-1.5 print:py-0.5 font-bold">: {selectedRecordForPrint.tegangan}</td></tr>
+                      <tr><td className="py-1.5 print:py-0.5 w-32 font-semibold text-gray-600">Tier</td><td className="py-1.5 print:py-0.5 font-bold">: {selectedRecordForPrint.tier}</td></tr>
                       <tr><td className="py-1.5 print:py-0.5 w-32 font-semibold text-gray-600">Tahun/Usia</td><td className="py-1.5 print:py-0.5 font-bold">: {selectedRecordForPrint.usia} ({selectedRecordForPrint.kategoriUsia})</td></tr>
                     </tbody>
                   </table>

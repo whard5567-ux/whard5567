@@ -30,6 +30,7 @@ export type AhiMtuRow = {
   koordinat: string;
   kategori_usia: string;
   ahi_terbaru: string;
+  tier: string;
   raw: Record<string, string>;
 };
 

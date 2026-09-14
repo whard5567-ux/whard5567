@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="id" suppressHydrationWarning className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}>
       <body className="min-h-full">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <div className="flex min-h-screen flex-col md:flex-row">
             <Sidebar />
             <main className="min-w-0 flex-1 px-4 pb-12 pt-4 md:px-8 md:pt-6">{children}</main>
